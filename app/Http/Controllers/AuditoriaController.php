@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreAuditoriaRequest;
+use App\Http\Requests\UpdateAuditoriaRequest;
 use App\Models\AuditoriaInterna;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class AuditoriaController extends Controller
@@ -31,30 +32,9 @@ class AuditoriaController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreAuditoriaRequest $request)
     {
-        $validated = $request->validate([
-            'localidade' => 'required|string|max:255',
-            'setor' => 'required|string|max:255',
-            'dataRealizacao' => 'required|date',
-            'horario_inicio' => 'required',
-            'horario_termino' => 'required',
-            'norma' => 'required|string|max:255',
-            'requisitos' => 'required|string',
-            'escopo' => 'nullable|string',
-            'auditorlider' => 'required|string|max:255',
-            'equipeAuditora' => 'nullable|string',
-            'areas_processo' => 'nullable|string',
-            'auditado' => 'nullable|string',
-            'doc_avaliados' => 'nullable|string',
-            'adms_sit_id' => 'required|integer',
-            'relatorio' => 'required|string',
-            'qtde_NC_encontradas' => 'nullable|integer',
-            'evidenciaobjetiva' => 'nullable|string',
-            'conclusoes' => 'nullable|string',
-        ]);
-
-        AuditoriaInterna::create($validated);
+        AuditoriaInterna::create($request->validated());
 
         return redirect()->route('auditorias.index')->with('message', 'Auditoria cadastrada com sucesso!');
     }
@@ -74,30 +54,9 @@ class AuditoriaController extends Controller
         ]);
     }
 
-    public function update(Request $request, AuditoriaInterna $auditoria)
+    public function update(UpdateAuditoriaRequest $request, AuditoriaInterna $auditoria)
     {
-        $validated = $request->validate([
-            'localidade' => 'required|string|max:255',
-            'setor' => 'required|string|max:255',
-            'dataRealizacao' => 'required|date',
-            'horario_inicio' => 'required',
-            'horario_termino' => 'required',
-            'norma' => 'required|string|max:255',
-            'requisitos' => 'required|string',
-            'escopo' => 'nullable|string',
-            'auditorlider' => 'required|string|max:255',
-            'equipeAuditora' => 'nullable|string',
-            'areas_processo' => 'nullable|string',
-            'auditado' => 'nullable|string',
-            'doc_avaliados' => 'nullable|string',
-            'adms_sit_id' => 'required|integer',
-            'relatorio' => 'required|string',
-            'qtde_NC_encontradas' => 'nullable|integer',
-            'evidenciaobjetiva' => 'nullable|string',
-            'conclusoes' => 'nullable|string',
-        ]);
-
-        $auditoria->update($validated);
+        $auditoria->update($request->validated());
 
         return redirect()->route('auditorias.index')->with('message', 'Auditoria atualizada com sucesso!');
     }

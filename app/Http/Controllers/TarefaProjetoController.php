@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreTarefaProjetoRequest;
+use App\Http\Requests\UpdateTarefaProjetoRequest;
 use App\Models\TarefaProjeto;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -16,23 +18,9 @@ class TarefaProjetoController extends Controller
         $this->authorizeResource(TarefaProjeto::class, 'tarefa');
     }
 
-    public function store(Request $request)
+    public function store(StoreTarefaProjetoRequest $request)
     {
-        $validated = $request->validate([
-            // Tenant-scoped: aceita projeto_id apenas se o projeto pertence
-            // ao tenant atual (ou se o solicitante é master admin).
-            'projeto_id' => ['required', Rule::exists('sts_projetos', 'id')->where(function ($q) {
-                if (!auth()->user()->is_master_admin) {
-                    $q->where('company_id', auth()->user()->company_id);
-                }
-            })],
-            'nome' => 'required|string|max:255',
-            'kanban_coluna_id' => ['nullable', Rule::exists('kanban_colunas', 'id')->where(function ($q) {
-                if (!auth()->user()->is_master_admin) {
-                    $q->where('company_id', auth()->user()->company_id);
-                }
-            })],
-        ]);
+        $validated = $request->validated();
 
         $maxOrdem = TarefaProjeto::where('projeto_id', $validated['projeto_id'])
                         ->when($validated['kanban_coluna_id'] ?? null, function ($query, $colunaId) {
@@ -48,20 +36,9 @@ class TarefaProjetoController extends Controller
         return back()->with('message', 'Tarefa adicionada!');
     }
 
-    public function update(Request $request, TarefaProjeto $tarefa)
+    public function update(UpdateTarefaProjetoRequest $request, TarefaProjeto $tarefa)
     {
-        $validated = $request->validate([
-            'nome' => 'sometimes|required|string|max:255',
-            'status' => 'sometimes|required|string|max:45',
-            'progresso' => 'sometimes|required|integer',
-            'kanban_coluna_id' => ['sometimes', 'nullable', Rule::exists('kanban_colunas', 'id')->where(function ($q) {
-                if (!auth()->user()->is_master_admin) {
-                    $q->where('company_id', auth()->user()->company_id);
-                }
-            })],
-        ]);
-
-        $tarefa->update($validated);
+        $tarefa->update($request->validated());
 
         return back()->with('message', 'Tarefa atualizada!');
     }
