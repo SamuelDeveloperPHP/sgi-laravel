@@ -2,14 +2,24 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable
+/**
+ * IMPORTANTE — implements MustVerifyEmail:
+ *   O middleware `verified` no Laravel só BLOQUEIA acesso de usuários
+ *   não-verificados se o model User implementar esta interface. Sem
+ *   isso, a rota Route::middleware(['auth','verified']) passa direto
+ *   para qualquer usuário autenticado, seja verificado ou não.
+ *
+ *   Detectado pelos testes adversários cross-tenant na Fase 3.B.
+ *   Antes: 'verified' middleware era cosmético.
+ */
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, HasRoles;
