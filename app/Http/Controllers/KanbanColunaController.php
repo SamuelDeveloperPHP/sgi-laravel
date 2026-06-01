@@ -8,6 +8,12 @@ use App\Models\KanbanColuna;
 
 class KanbanColunaController extends Controller
 {
+    public function __construct()
+    {
+        // Wire Policy. reorder() não é resource-action, é protegido por validação.
+        $this->authorizeResource(KanbanColuna::class, 'kanban_coluna');
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([

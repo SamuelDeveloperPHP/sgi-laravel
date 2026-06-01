@@ -11,6 +11,7 @@ class NaoConformidadeController extends Controller
 {
     public function index(Request $request)
     {
+        $this->authorize('viewAny', NaoConformidade::class);
         $query = NaoConformidade::query();
 
         if ($request->filled('search')) {
@@ -37,6 +38,7 @@ class NaoConformidadeController extends Controller
 
     public function create()
     {
+        $this->authorize('create', NaoConformidade::class);
         return Inertia::render('NaoConformidades/Form', [
             'nc' => new NaoConformidade(),
             'isEdit' => false
@@ -45,6 +47,7 @@ class NaoConformidadeController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorize('create', NaoConformidade::class);
         $validated = $request->validate([
             'dados_origem' => 'nullable|array',
             'descOcorrencia' => 'nullable|string',
@@ -82,6 +85,7 @@ class NaoConformidadeController extends Controller
     public function show($id)
     {
         $nc = NaoConformidade::findOrFail($id);
+        $this->authorize('view', $nc);
         return Inertia::render('NaoConformidades/Show', [
             'nc' => $nc
         ]);
@@ -90,6 +94,7 @@ class NaoConformidadeController extends Controller
     public function edit($id)
     {
         $nc = NaoConformidade::findOrFail($id);
+        $this->authorize('update', $nc);
         return Inertia::render('NaoConformidades/Form', [
             'nc' => $nc,
             'isEdit' => true
@@ -99,6 +104,7 @@ class NaoConformidadeController extends Controller
     public function update(Request $request, $id)
     {
         $nc = NaoConformidade::findOrFail($id);
+        $this->authorize('update', $nc);
 
         $validated = $request->validate([
             'dados_origem' => 'nullable|array',
@@ -135,6 +141,7 @@ class NaoConformidadeController extends Controller
     public function destroy($id)
     {
         $nc = NaoConformidade::findOrFail($id);
+        $this->authorize('delete', $nc);
         $nc->delete();
         return redirect()->route('nao-conformidades.index')->with('message', 'Não Conformidade excluída com sucesso!');
     }

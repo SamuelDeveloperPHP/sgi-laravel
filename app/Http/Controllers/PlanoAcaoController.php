@@ -10,6 +10,7 @@ class PlanoAcaoController extends Controller
 {
     public function index()
     {
+        $this->authorize('viewAny', PlanoAcao::class);
         $planos = PlanoAcao::orderBy('created', 'desc')->paginate(10);
         
         return Inertia::render('PlanosAcao/Index', [
@@ -19,6 +20,7 @@ class PlanoAcaoController extends Controller
 
     public function create()
     {
+        $this->authorize('create', PlanoAcao::class);
         return Inertia::render('PlanosAcao/Form', [
             'plano' => new PlanoAcao(),
             'isEdit' => false
@@ -27,6 +29,7 @@ class PlanoAcaoController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorize('create', PlanoAcao::class);
         $validated = $request->validate([
             'adms_sit_id' => 'required|integer',
             'adms_usuario_id' => 'required|integer',
@@ -51,6 +54,7 @@ class PlanoAcaoController extends Controller
     public function show($id)
     {
         $planoAcao = PlanoAcao::findOrFail($id);
+        $this->authorize('view', $planoAcao);
         return Inertia::render('PlanosAcao/Show', [
             'plano' => $planoAcao
         ]);
@@ -59,6 +63,7 @@ class PlanoAcaoController extends Controller
     public function edit($id)
     {
         $planoAcao = PlanoAcao::findOrFail($id);
+        $this->authorize('update', $planoAcao);
         return Inertia::render('PlanosAcao/Form', [
             'plano' => $planoAcao,
             'isEdit' => true
@@ -68,7 +73,8 @@ class PlanoAcaoController extends Controller
     public function update(Request $request, $id)
     {
         $planoAcao = PlanoAcao::findOrFail($id);
-        
+        $this->authorize('update', $planoAcao);
+
         $validated = $request->validate([
             'adms_sit_id' => 'required|integer',
             'adms_usuario_id' => 'required|integer',
@@ -93,6 +99,7 @@ class PlanoAcaoController extends Controller
     public function destroy($id)
     {
         $planoAcao = PlanoAcao::findOrFail($id);
+        $this->authorize('delete', $planoAcao);
         $planoAcao->delete();
         
         return redirect()->route('planos-acao.index')->with('message', 'Plano de Ação excluído!');
