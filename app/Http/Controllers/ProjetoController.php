@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreProjetoRequest;
+use App\Http\Requests\UpdateProjetoRequest;
 use App\Models\Projeto;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class ProjetoController extends Controller
@@ -33,34 +34,9 @@ class ProjetoController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreProjetoRequest $request)
     {
-        $validated = $request->validate([
-            'nomeProjeto' => 'required|string|max:255',
-            'descricao' => 'nullable|string',
-            'data_inicio' => 'nullable|date',
-            'data_fim' => 'nullable|date',
-            'porc_concluido' => 'nullable|integer|min:0|max:100',
-            'ativo' => 'nullable|boolean',
-            'privacidade' => 'nullable|string',
-            'tags' => 'nullable|array',
-            // Tenant-scoped: só aceita usuários cujo users.company_id casa
-            // com o tenant do solicitante (master admin bypassa o filtro).
-            'responsavel_id' => ['nullable', Rule::exists('users', 'id')->where(function ($q) {
-                if (!auth()->user()->is_master_admin) {
-                    $q->where('company_id', auth()->user()->company_id);
-                }
-            })],
-            'membros' => 'nullable|array',
-            'membros.*' => [Rule::exists('users', 'id')->where(function ($q) {
-                if (!auth()->user()->is_master_admin) {
-                    $q->where('company_id', auth()->user()->company_id);
-                }
-            })],
-            'imagem_capa' => 'nullable|image|max:2048',
-            'arquivos_anexos' => 'nullable|array',
-            'arquivos_anexos.*' => 'nullable|file|max:10240'
-        ]);
+        $validated = $request->validated();
 
         if (isset($validated['tags'])) {
             $validated['tags'] = json_encode($validated['tags']);
@@ -132,34 +108,9 @@ class ProjetoController extends Controller
         ]);
     }
 
-    public function update(Request $request, Projeto $projeto)
+    public function update(UpdateProjetoRequest $request, Projeto $projeto)
     {
-        $validated = $request->validate([
-            'nomeProjeto' => 'required|string|max:255',
-            'descricao' => 'nullable|string',
-            'data_inicio' => 'nullable|date',
-            'data_fim' => 'nullable|date',
-            'porc_concluido' => 'nullable|integer|min:0|max:100',
-            'ativo' => 'nullable|boolean',
-            'privacidade' => 'nullable|string',
-            'tags' => 'nullable|array',
-            // Tenant-scoped: só aceita usuários cujo users.company_id casa
-            // com o tenant do solicitante (master admin bypassa o filtro).
-            'responsavel_id' => ['nullable', Rule::exists('users', 'id')->where(function ($q) {
-                if (!auth()->user()->is_master_admin) {
-                    $q->where('company_id', auth()->user()->company_id);
-                }
-            })],
-            'membros' => 'nullable|array',
-            'membros.*' => [Rule::exists('users', 'id')->where(function ($q) {
-                if (!auth()->user()->is_master_admin) {
-                    $q->where('company_id', auth()->user()->company_id);
-                }
-            })],
-            'imagem_capa' => 'nullable|image|max:2048',
-            'arquivos_anexos' => 'nullable|array',
-            'arquivos_anexos.*' => 'nullable|file|max:10240'
-        ]);
+        $validated = $request->validated();
 
         if (isset($validated['tags'])) {
             $validated['tags'] = json_encode($validated['tags']);

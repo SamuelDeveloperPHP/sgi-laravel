@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StorePlanoAcaoRequest;
+use App\Http\Requests\UpdatePlanoAcaoRequest;
 use App\Models\PlanoAcao;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class PlanoAcaoController extends Controller
@@ -27,26 +28,10 @@ class PlanoAcaoController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StorePlanoAcaoRequest $request)
     {
         $this->authorize('create', PlanoAcao::class);
-        $validated = $request->validate([
-            'adms_sit_id' => 'required|integer',
-            'adms_usuario_id' => 'required|integer',
-            'data_cad' => 'nullable|date',
-            'status' => 'nullable|string|max:50',
-            'o_q_aconteceu' => 'required|string',
-            'responsaveis' => 'required|string|max:255',
-            'dt_prazo' => 'required|date',
-            'onde_ocorreu' => 'nullable|string',
-            'porque_ocorreu' => 'nullable|string',
-            'como_resolver' => 'nullable|string',
-            'custo' => 'nullable|numeric',
-            'data_concluido' => 'nullable|date',
-            'observacoes' => 'nullable|string',
-        ]);
-
-        PlanoAcao::create($validated);
+        PlanoAcao::create($request->validated());
 
         return redirect()->route('planos-acao.index')->with('message', 'Plano de Ação criado com sucesso!');
     }
@@ -70,28 +55,12 @@ class PlanoAcaoController extends Controller
         ]);
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdatePlanoAcaoRequest $request, $id)
     {
         $planoAcao = PlanoAcao::findOrFail($id);
         $this->authorize('update', $planoAcao);
 
-        $validated = $request->validate([
-            'adms_sit_id' => 'required|integer',
-            'adms_usuario_id' => 'required|integer',
-            'data_cad' => 'nullable|date',
-            'status' => 'nullable|string|max:50',
-            'o_q_aconteceu' => 'required|string',
-            'responsaveis' => 'required|string|max:255',
-            'dt_prazo' => 'required|date',
-            'onde_ocorreu' => 'nullable|string',
-            'porque_ocorreu' => 'nullable|string',
-            'como_resolver' => 'nullable|string',
-            'custo' => 'nullable|numeric',
-            'data_concluido' => 'nullable|date',
-            'observacoes' => 'nullable|string',
-        ]);
-
-        $planoAcao->update($validated);
+        $planoAcao->update($request->validated());
 
         return redirect()->route('planos-acao.index')->with('message', 'Plano de Ação atualizado com sucesso!');
     }

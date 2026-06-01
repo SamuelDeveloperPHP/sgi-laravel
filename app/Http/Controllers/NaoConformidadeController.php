@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreNaoConformidadeRequest;
+use App\Http\Requests\UpdateNaoConformidadeRequest;
 use App\Models\NaoConformidade;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
 
 class NaoConformidadeController extends Controller
 {
@@ -45,17 +47,10 @@ class NaoConformidadeController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreNaoConformidadeRequest $request)
     {
         $this->authorize('create', NaoConformidade::class);
-        $validated = $request->validate([
-            'dados_origem' => 'nullable|array',
-            'descOcorrencia' => 'nullable|string',
-            'acao_contencao_grid' => 'nullable|array',
-            'cinco_porques' => 'nullable|array',
-            'plano_acao_grid' => 'nullable|array',
-            'evidencias' => 'nullable|array',
-        ]);
+        $validated = $request->validated();
 
         if (isset($validated['evidencias']) && is_array($validated['evidencias'])) {
             // Namespace storage por tenant: 'ncs/<company_id>/<hash>.ext'.
@@ -101,19 +96,11 @@ class NaoConformidadeController extends Controller
         ]);
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateNaoConformidadeRequest $request, $id)
     {
         $nc = NaoConformidade::findOrFail($id);
         $this->authorize('update', $nc);
-
-        $validated = $request->validate([
-            'dados_origem' => 'nullable|array',
-            'descOcorrencia' => 'nullable|string',
-            'acao_contencao_grid' => 'nullable|array',
-            'cinco_porques' => 'nullable|array',
-            'plano_acao_grid' => 'nullable|array',
-            'evidencias' => 'nullable|array',
-        ]);
+        $validated = $request->validated();
 
         if (isset($validated['evidencias']) && is_array($validated['evidencias'])) {
             // Namespace storage por tenant: 'ncs/<company_id>/<hash>.ext'.
