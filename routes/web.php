@@ -18,7 +18,11 @@ Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'ind
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
-Route::middleware('auth')->group(function () {
+// 'verified' exige email_verified_at != NULL. Novos usuários registrados
+// via /register precisam clicar no link de verificação enviado por e-mail.
+// Em dev/staging sem SMTP, considere setar email_verified_at via tinker
+// ou desabilitar este middleware no .env local.
+Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
