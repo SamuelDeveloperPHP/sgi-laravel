@@ -8,6 +8,14 @@ use Illuminate\Validation\Rule;
 
 class TarefaProjetoController extends Controller
 {
+    public function __construct()
+    {
+        // Wire Policy para actions RESTful (store/update/destroy registradas em rotas).
+        // O método reorder() não é resource-action — é protegido pela validação
+        // tenant-scoped (Rule::exists scopeada) que já filtra IDs cross-tenant.
+        $this->authorizeResource(TarefaProjeto::class, 'tarefa');
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([

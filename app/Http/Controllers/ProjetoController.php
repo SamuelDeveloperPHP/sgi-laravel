@@ -10,6 +10,12 @@ use Inertia\Inertia;
 
 class ProjetoController extends Controller
 {
+    public function __construct()
+    {
+        // Wire automatic Policy checks (ProjetoPolicy@viewAny/view/create/update/delete).
+        $this->authorizeResource(Projeto::class, 'projeto');
+    }
+
     public function index()
     {
         $projetos = Projeto::with(['membros', 'responsavel'])->orderBy('ordem')->get();

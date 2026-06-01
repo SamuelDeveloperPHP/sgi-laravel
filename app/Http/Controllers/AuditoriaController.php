@@ -8,6 +8,13 @@ use Inertia\Inertia;
 
 class AuditoriaController extends Controller
 {
+    public function __construct()
+    {
+        // Wire automatic Policy checks (AuditoriaInternaPolicy@viewAny/view/create/update/delete)
+        // para todas as actions RESTful. Segunda camada além do TenantScope.
+        $this->authorizeResource(AuditoriaInterna::class, 'auditoria');
+    }
+
     public function index()
     {
         $auditorias = AuditoriaInterna::orderBy('created', 'desc')->paginate(10);
