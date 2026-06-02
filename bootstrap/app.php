@@ -14,9 +14,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
+            // Adiciona headers de seguranca (HSTS, CSP, X-Frame-Options, etc.)
+            // em TODAS as respostas web. Ver app/Http/Middleware/SecurityHeaders.php
+            // para detalhes de cada header e notas de hardening futuro.
+            \App\Http\Middleware\SecurityHeaders::class,
         ]);
-
-        //
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
