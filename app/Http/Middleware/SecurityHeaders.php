@@ -50,7 +50,10 @@ class SecurityHeaders
         }
 
         $response->headers->set('X-Content-Type-Options', 'nosniff');
-        $response->headers->set('X-Frame-Options', 'DENY');
+        // Permitir iframes na mesma origem (necessário para o preview de PDF)
+        if (!$response->headers->has('X-Frame-Options')) {
+            $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
+        }
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
         $response->headers->set(
             'Permissions-Policy',
@@ -59,21 +62,24 @@ class SecurityHeaders
         $response->headers->set('Cross-Origin-Opener-Policy', 'same-origin');
         $response->headers->set('Cross-Origin-Resource-Policy', 'same-site');
 
-        // CSP — permissivo para suportar Inertia+Vite+Tailwind sem quebrar.
-        // Endurecer em P1 com nonces (ver nota no docblock).
-        $csp = implode('; ', [
-            "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-            "style-src 'self' 'unsafe-inline'",
-            "img-src 'self' data: blob: https:",
-            "font-src 'self' data:",
-            "connect-src 'self' ws: wss:",
-            "object-src 'none'",
-            "base-uri 'self'",
-            "form-action 'self'",
-            "frame-ancestors 'none'",
-        ]);
-        $response->headers->set('Content-Security-Policy', $csp);
+        if ($isProduction) {
+            $csp = implode('; ', [
+                "default-src 'self'",
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+                "style-src 'self' 'unsafe-inline' https://fonts.bunny.net",
+                "img-src 'self' data: blob: https:",
+                "font-src 'self' data: https://fonts.bunny.net",
+                "connect-src 'self' ws: wss:",
+                "object-src 'none'",
+                "base-uri 'self'",
+                "form-action 'self'",
+                "frame-ancestors 'none'",
+            ]);
+            $response->headers->set('Content-Security-Policy', $csp);
+        } else {
+            // No ambiente local, liberamos o CSP para não dar conflito com o IPV6 do Vite ([::1]) e Hot Reload
+            $response->headers->set('Content-Security-Policy', "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;");
+        }
 
         // Remove headers que vazam tech-stack
         $response->headers->remove('X-Powered-By');

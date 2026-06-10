@@ -24,4 +24,20 @@ abstract class Controller extends BaseController
     // AuthorizesRequests permite usar $this->authorize() e
     // $this->authorizeResource() em qualquer controller filho.
     use AuthorizesRequests;
+
+    protected function authorizePermission($permission)
+    {
+        $user = auth()->user();
+        if (!$user) {
+            abort(403, 'Acesso não autorizado.');
+        }
+        
+        if ($user->is_master_admin) {
+            return; // Master admin bypass
+        }
+
+        if (!$user->hasPermissionTo($permission)) {
+            abort(403, 'Acesso não autorizado.');
+        }
+    }
 }
