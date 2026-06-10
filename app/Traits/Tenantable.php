@@ -18,7 +18,10 @@ trait Tenantable
         static::creating(function ($model) {
             if (auth()->check()) {
                 $user = auth()->user();
-                $model->company_id = $user->company_id;
+                // Apenas sobrescreve o company_id se estiver vazio ou se o usuário não for Master Admin
+                if (empty($model->company_id) || !$user->is_master_admin) {
+                    $model->company_id = $user->company_id;
+                }
                 $model->user_create = $user->id;
             }
         });
