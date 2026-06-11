@@ -64,25 +64,29 @@ Route::middleware(['auth', 'verified', 'company.required'])->group(function () {
         'nao-conformidades' => 'id'
     ]);
 
-    // Módulo STS - Projetos e Tarefas
-    Route::resource('projetos', \App\Http\Controllers\ProjetoController::class);
-    
-    Route::resource('kanban-colunas', \App\Http\Controllers\KanbanColunaController::class)->only(['store', 'update', 'destroy']);
-    Route::post('kanban-colunas/reorder', [\App\Http\Controllers\KanbanColunaController::class, 'reorder'])->name('kanban-colunas.reorder');
-    
-    Route::post('tarefas/reorder', [\App\Http\Controllers\TarefaProjetoController::class, 'reorder'])->name('tarefas.reorder');
-    Route::resource('tarefas', \App\Http\Controllers\TarefaProjetoController::class)->only(['store', 'update', 'destroy']);
-    
-    // Tarefa Details Routes
-    Route::post('tarefas/{tarefa}/comentarios', [\App\Http\Controllers\TarefaProjetoController::class, 'storeComment'])->name('tarefas.comentarios.store');
-    Route::delete('tarefas/comentarios/{comentario}', [\App\Http\Controllers\TarefaProjetoController::class, 'deleteComment'])->name('tarefas.comentarios.destroy');
-    
-    Route::post('tarefas/{tarefa}/anexos', [\App\Http\Controllers\TarefaProjetoController::class, 'storeAttachment'])->name('tarefas.anexos.store');
-    Route::delete('tarefas/anexos/{anexo}', [\App\Http\Controllers\TarefaProjetoController::class, 'deleteAttachment'])->name('tarefas.anexos.destroy');
-    
-    Route::post('tarefas/{tarefa}/checklists', [\App\Http\Controllers\TarefaProjetoController::class, 'storeChecklist'])->name('tarefas.checklists.store');
-    Route::put('tarefas/checklists/{checklist}', [\App\Http\Controllers\TarefaProjetoController::class, 'updateChecklist'])->name('tarefas.checklists.update');
-    Route::delete('tarefas/checklists/{checklist}', [\App\Http\Controllers\TarefaProjetoController::class, 'deleteChecklist'])->name('tarefas.checklists.destroy');
+    // Modulo Projetos e Tarefas — RESTRITO a Master Admin (regra de
+    // negocio: ver memoria sgi-laravel-access-rules item 3).
+    // Outros usuarios nao acessam estas rotas mesmo com a URL direta.
+    Route::middleware(\App\Http\Middleware\CheckMasterAdmin::class)->group(function () {
+        Route::resource('projetos', \App\Http\Controllers\ProjetoController::class);
+
+        Route::resource('kanban-colunas', \App\Http\Controllers\KanbanColunaController::class)->only(['store', 'update', 'destroy']);
+        Route::post('kanban-colunas/reorder', [\App\Http\Controllers\KanbanColunaController::class, 'reorder'])->name('kanban-colunas.reorder');
+
+        Route::post('tarefas/reorder', [\App\Http\Controllers\TarefaProjetoController::class, 'reorder'])->name('tarefas.reorder');
+        Route::resource('tarefas', \App\Http\Controllers\TarefaProjetoController::class)->only(['store', 'update', 'destroy']);
+
+        // Tarefa Details Routes
+        Route::post('tarefas/{tarefa}/comentarios', [\App\Http\Controllers\TarefaProjetoController::class, 'storeComment'])->name('tarefas.comentarios.store');
+        Route::delete('tarefas/comentarios/{comentario}', [\App\Http\Controllers\TarefaProjetoController::class, 'deleteComment'])->name('tarefas.comentarios.destroy');
+
+        Route::post('tarefas/{tarefa}/anexos', [\App\Http\Controllers\TarefaProjetoController::class, 'storeAttachment'])->name('tarefas.anexos.store');
+        Route::delete('tarefas/anexos/{anexo}', [\App\Http\Controllers\TarefaProjetoController::class, 'deleteAttachment'])->name('tarefas.anexos.destroy');
+
+        Route::post('tarefas/{tarefa}/checklists', [\App\Http\Controllers\TarefaProjetoController::class, 'storeChecklist'])->name('tarefas.checklists.store');
+        Route::put('tarefas/checklists/{checklist}', [\App\Http\Controllers\TarefaProjetoController::class, 'updateChecklist'])->name('tarefas.checklists.update');
+        Route::delete('tarefas/checklists/{checklist}', [\App\Http\Controllers\TarefaProjetoController::class, 'deleteChecklist'])->name('tarefas.checklists.destroy');
+    });
 
     // Módulo ISO 9001 - Política da Qualidade
     Route::get('politica-qualidade', [\App\Http\Controllers\PoliticaQualidadeController::class, 'index'])->name('politica-qualidade.index');

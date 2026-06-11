@@ -78,42 +78,42 @@ class User extends Authenticatable implements MustVerifyEmail
 
     /**
      * Relacionamento N:N com Company via pivot company_user.
+     * Padrão Eloquent: relacionamento simples e previsivel.
      *
-     * COMPORTAMENTO ESPECIAL para master admin:
-     *   Master admin tem acesso GLOBAL a todas as empresas (regra 1
-     *   da memoria sgi-laravel-access-rules). Para evitar bloat de
-     *   pivot (uma linha por empresa por master admin), sobrescrevemos
-     *   a query da relacao para retornar Company::all() quando
-     *   is_master_admin = true.
+     * NOTA — Master admin e pivot:
+     *   Master admin (is_master_admin = true) NAO esta no pivot por
+     *   design. Ele tem acesso global via TenantScope bypass +
+     *   AbstractTenantPolicy::before() — nao precisa de linhas em
+     *   company_user. Codigo que itera sobre $user->companies para
+     *   exibicao UI deve verificar antes:
      *
-     *   Isso mantem o codigo cliente simples: $user->companies sempre
-     *   retorna a lista de empresas acessiveis, independente do papel.
+     *     if ($user->is_master_admin) {
+     *         $accessibleCompanies = Company::all();
+     *     } else {
+     *         $accessibleCompanies = $user->companies;
+     *     }
      *
-     *   UI (Admin/Users/Index, Admin/Users/Form) e outros lugares que
-     *   iteram sobre user.companies veem master admin como se ele
-     *   "pertencesse" a todas as empresas, refletindo a realidade do
-     *   acesso global.
+     *   Ou usar o helper accessibleCompanies() abaixo.
      */
     public function companies()
     {
-        if ($this->is_master_admin) {
-            // Master admin: faz a relacao apontar para companies
-            // diretamente, sem JOIN no pivot. Equivalente a
-            // Company::query() mas mantem o tipo Relation.
-            $relation = $this->belongsToMany(Company::class);
-            // Substitui a query subjacente por SELECT * FROM companies
-            // sem filtro algum.
-            $query = $relation->getQuery();
-            $query->getQuery()->wheres = [];
-            $query->getQuery()->joins = [];
-            $query->getQuery()->bindings = [
-                'select' => [], 'from' => [], 'join' => [], 'where' => [],
-                'groupBy' => [], 'having' => [], 'order' => [], 'union' => [],
-                'unionOrder' => [],
-            ];
-            return $relation;
-        }
-
         return $this->belongsToMany(Company::class);
+    }
+
+    /**
+     * Coleção das empresas acessíveis pelo usuário (para uso em UI).
+     *
+     * - Master admin: retorna TODAS as companies (acesso global)
+     * - Demais: retorna as empresas vinculadas via pivot company_user
+     *
+     * Retorna sempre Collection (não Relation) - usar para listagens
+     * de exibição, não para queries Eloquent complexas.
+     */
+    public function accessibleCompanies(): \Illuminate\Database\Eloquent\Collection
+    {
+        if ($this->is_master_admin) {
+            return Company::orderBy('nome_fantasia')->get();
+        }
+        return $this->companies()->orderBy('nome_fantasia')->get();
     }
 }

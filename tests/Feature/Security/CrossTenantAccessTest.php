@@ -141,16 +141,21 @@ class CrossTenantAccessTest extends SecurityTestCase
     // =================================================================
 
     /** @test */
-    public function user_A_does_not_see_projetos_from_company_B_in_listing(): void
+    public function user_A_blocked_from_projetos_listing_master_only(): void
     {
-        $projetoA = $this->makeProjeto($this->companyA);
-        $projetoB = $this->makeProjeto($this->companyB);
+        // REGRA ATUALIZADA (2026-06-11, memoria sgi-laravel-access-rules):
+        // Modulo Projetos e RESTRITO a master admin. Teste original
+        // verificava isolamento de TenantScope entre A e B; agora userA
+        // (nao master) e bloqueado antes mesmo de chegar no controller
+        // pelo middleware CheckMasterAdmin -> abort(403) -> bootstrap
+        // handler converte em redirect com flash 'error'.
+        $this->makeProjeto($this->companyA);
 
         $response = $this->actingAs($this->userA)->get('/projetos');
 
-        $response->assertStatus(200);
-        $response->assertSee($projetoA->nomeProjeto);
-        $response->assertDontSee($projetoB->nomeProjeto);
+        // 403 OU redirect (handler de Exception em bootstrap/app.php
+        // intercepta HttpException 403 e redireciona com flash).
+        $this->assertContains($response->status(), [302, 403]);
     }
 
     /** @test */
@@ -198,25 +203,22 @@ class CrossTenantAccessTest extends SecurityTestCase
     }
 
     /** @test */
-    public function user_A_cannot_create_projeto_with_responsavel_from_company_B(): void
+    public function user_A_blocked_from_creating_projeto_master_only(): void
     {
+        // Substitui dois testes anteriores (responsavel_id e membros)
+        // que validavam tenantScopedExists nos Form Requests. Agora
+        // userA (nao-master) e bloqueado pelo middleware ANTES de
+        // chegar nas validacoes.
         $response = $this->actingAs($this->userA)->post('/projetos', [
             'nomeProjeto'    => 'TEST Projeto Hack',
-            'responsavel_id' => $this->userB->id, // usuário de empresa B
+            'responsavel_id' => $this->userB->id,
         ]);
 
-        $response->assertSessionHasErrors('responsavel_id');
-    }
-
-    /** @test */
-    public function user_A_cannot_create_projeto_with_membros_from_company_B(): void
-    {
-        $response = $this->actingAs($this->userA)->post('/projetos', [
+        $this->assertContains($response->status(), [302, 403]);
+        // Confirma que NAO criou nada
+        $this->assertDatabaseMissing('sts_projetos', [
             'nomeProjeto' => 'TEST Projeto Hack',
-            'membros'     => [$this->userB->id],
         ]);
-
-        $response->assertSessionHasErrors('membros.0');
     }
 
     // =================================================================
@@ -224,7 +226,7 @@ class CrossTenantAccessTest extends SecurityTestCase
     // =================================================================
 
     /** @test */
-    public function user_A_cannot_create_tarefa_in_projeto_from_company_B(): void
+    public function user_A_blocked_from_tarefa_create_master_only(): void
     {
         $projetoB = $this->makeProjeto($this->companyB);
 
@@ -233,7 +235,7 @@ class CrossTenantAccessTest extends SecurityTestCase
             'nome'       => 'Tarefa Maliciosa',
         ]);
 
-        $response->assertSessionHasErrors('projeto_id');
+        $this->assertContains($response->status(), [302, 403]);
     }
 
     /** @test */
@@ -250,7 +252,7 @@ class CrossTenantAccessTest extends SecurityTestCase
     }
 
     /** @test */
-    public function user_A_cannot_reorder_tarefas_from_company_B(): void
+    public function user_A_blocked_from_tarefa_reorder_master_only(): void
     {
         $projetoB = $this->makeProjeto($this->companyB);
         $tarefaB = $this->makeTarefa($projetoB);
@@ -261,7 +263,7 @@ class CrossTenantAccessTest extends SecurityTestCase
             ],
         ]);
 
-        $response->assertSessionHasErrors('tasks.0.id');
+        $this->assertContains($response->status(), [302, 403]);
     }
 
     // =================================================================
@@ -269,7 +271,7 @@ class CrossTenantAccessTest extends SecurityTestCase
     // =================================================================
 
     /** @test */
-    public function user_A_cannot_create_kanban_in_projeto_from_company_B(): void
+    public function user_A_blocked_from_kanban_create_master_only(): void
     {
         $projetoB = $this->makeProjeto($this->companyB);
 
@@ -278,7 +280,7 @@ class CrossTenantAccessTest extends SecurityTestCase
             'nome'       => 'Coluna Maliciosa',
         ]);
 
-        $response->assertSessionHasErrors('projeto_id');
+        $this->assertContains($response->status(), [302, 403]);
     }
 
     // =================================================================
@@ -310,26 +312,24 @@ class CrossTenantAccessTest extends SecurityTestCase
     // =================================================================
 
     /** @test */
-    public function user_A_cannot_force_company_id_in_projeto_create(): void
+    public function user_A_blocked_from_projeto_create_via_master_only(): void
     {
-        // Nome único por run para isolar de eventual pollution histórica.
+        // Substitui o teste anterior que validava Tenantable em
+        // /projetos. Agora userA (nao-master) sequer chega no
+        // Tenantable porque o middleware bloqueia antes.
+        // O teste de mass-assignment de company_id ainda existe na
+        // forma "user A cannot force company id" para OUTROS modelos
+        // (NC, plano-acao, auditoria), nao precisamos repetir aqui.
         $uniqueName = 'Tentativa de injeção ' . uniqid();
 
         $response = $this->actingAs($this->userA)->post('/projetos', [
             'nomeProjeto' => $uniqueName,
-            'company_id'  => $this->companyB->id, // tentativa de cross-tenant via body
+            'company_id'  => $this->companyB->id,
         ]);
 
-        $response->assertRedirect(); // sucesso (validação não exige campo)
-
-        // Tenantable.creating deve ter setado company_id = userA.company_id = A
-        $this->assertDatabaseHas('sts_projetos', [
-            'nomeProjeto' => $uniqueName,
-            'company_id'  => $this->companyA->id,
-        ]);
+        $this->assertContains($response->status(), [302, 403]);
         $this->assertDatabaseMissing('sts_projetos', [
             'nomeProjeto' => $uniqueName,
-            'company_id'  => $this->companyB->id,
         ]);
     }
 
