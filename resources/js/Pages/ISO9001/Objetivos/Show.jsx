@@ -42,7 +42,7 @@ export default function Show({ auth, objetivo }) {
             <Head title="Detalhes do Objetivo" />
 
             <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+                <div className="w-full sm:px-6 lg:px-8 space-y-6">
                     
                     <div className="flex mb-4">
                         <Link href={route('objetivos-qualidade.index')} className="inline-flex items-center text-sm font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300">

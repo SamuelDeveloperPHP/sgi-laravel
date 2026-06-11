@@ -47,7 +47,7 @@ export default function Index({ auth, objetivos, companies, currentCompanyId }) 
             <Head title="Objetivos da Qualidade" />
 
             <div className="py-12">
-                <div className="max-w-[95%] mx-auto sm:px-6 lg:px-8 space-y-6">
+                <div className="w-full sm:px-6 lg:px-8 space-y-6">
                     
                     {/* Botões de Ação */}
                     {canManage && (
