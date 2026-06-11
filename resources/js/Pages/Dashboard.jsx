@@ -33,7 +33,7 @@ export default function Dashboard({ auth, stats, recent_nc, recent_pa }) {
             <Head title="Dashboard" />
 
             <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+                <div className="w-full sm:px-6 lg:px-8 space-y-6">
                     
                     {/* Welcome Banner */}
                     <div className="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl p-6 shadow-lg text-white">

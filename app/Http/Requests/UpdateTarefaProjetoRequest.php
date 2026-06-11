@@ -21,6 +21,11 @@ class UpdateTarefaProjetoRequest extends FormRequest
             'status'            => 'sometimes|required|string|max:45',
             'progresso'         => 'sometimes|required|integer',
             'kanban_coluna_id'  => ['sometimes', 'nullable', $this->tenantScopedExists('kanban_colunas')],
+            'relevancia'        => 'sometimes|nullable|string|max:45',
+            'descricao'         => 'sometimes|nullable|string',
+            'dt_inicio'         => 'sometimes|nullable|date',
+            'dt_fim'            => 'sometimes|nullable|date',
+            'repetir'           => 'sometimes|nullable|string|max:45',
         ];
     }
 }

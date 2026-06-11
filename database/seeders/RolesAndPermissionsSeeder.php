@@ -35,6 +35,12 @@ class RolesAndPermissionsSeeder extends Seeder
             'manage-companies',
             'view-users',
             'manage-users',
+            'view-politica-qualidade',
+            'manage-politica-qualidade',
+            'view-escopo',
+            'manage-escopo',
+            'view-objetivos-qualidade',
+            'manage-objetivos-qualidade',
         ];
 
         foreach ($permissions as $permission) {

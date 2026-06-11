@@ -19,7 +19,7 @@ export default function Index({ auth, ncs, filters }) {
             <Head title="Não Conformidades" />
 
             <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                <div className="w-full sm:px-6 lg:px-8">
                     <div className="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg">
                         <div className="p-6 text-slate-900 dark:text-slate-100">
                             

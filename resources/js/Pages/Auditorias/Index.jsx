@@ -19,7 +19,7 @@ export default function Index({ auth, auditorias, flash }) {
             <Head title="Auditorias Internas" />
 
             <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+                <div className="w-full sm:px-6 lg:px-8 space-y-6">
                     
                     {/* Header Actions */}
                     <div className="flex justify-between items-center bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/50">

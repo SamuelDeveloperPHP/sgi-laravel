@@ -8,8 +8,7 @@ class StorePlanoAcaoRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Autorização tratada por $this->authorize() no PlanoAcaoController.
-        return true;
+        return auth()->check() && auth()->user()->can('create', \App\Models\PlanoAcao::class);
     }
 
     public function rules(): array
