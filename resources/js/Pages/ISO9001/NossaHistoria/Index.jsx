@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm } from '@inertiajs/react';
 import ReactQuill from 'react-quill';
@@ -9,8 +9,10 @@ export default function Index({ auth, historia, companies, currentCompanyId }) {
     const userPermissions = auth.user?.permissions || [];
     const canManage = userPermissions.includes('manage-nossa-historia');
 
+    const [isEditing, setIsEditing] = useState(!historia?.conteudo);
+
     const { data, setData, post, processing, errors } = useForm({
-        conteudo: historia.conteudo || '',
+        conteudo: historia?.conteudo || '',
         company_id: currentCompanyId || '',
     });
 
@@ -26,7 +28,17 @@ export default function Index({ auth, historia, companies, currentCompanyId }) {
 
     const handleSave = (e) => {
         e.preventDefault();
-        post(route('nossa-historia.salvar'), { preserveScroll: true });
+        post(route('nossa-historia.salvar'), { 
+            preserveScroll: true,
+            onSuccess: () => setIsEditing(false)
+        });
+    };
+
+    const handleDelete = () => {
+        if (confirm('Tem certeza que deseja excluir o conteúdo?')) {
+            setData('conteudo', '');
+            post(route('nossa-historia.salvar'), { preserveScroll: true });
+        }
     };
 
     return (
@@ -57,7 +69,7 @@ export default function Index({ auth, historia, companies, currentCompanyId }) {
             <Head title="Nossa História" />
 
             <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+                <div className="max-w-[95%] mx-auto sm:px-6 lg:px-8 space-y-6">
                     <div className="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                         <div className="flex justify-between items-center mb-6">
                             <div className="flex items-center gap-2">
@@ -74,7 +86,7 @@ export default function Index({ auth, historia, companies, currentCompanyId }) {
                             }
                         `}</style>
 
-                        {canManage ? (
+                        {isEditing ? (
                             <form onSubmit={handleSave} className="space-y-4">
                                 <ReactQuill 
                                     theme="snow" 
@@ -85,7 +97,19 @@ export default function Index({ auth, historia, companies, currentCompanyId }) {
                                 />
                                 {errors.conteudo && <p className="text-sm text-red-600 mt-1">{errors.conteudo}</p>}
                                 
-                                <div className="flex justify-end pt-4">
+                                <div className="flex justify-end pt-4 gap-2">
+                                    {historia?.conteudo && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setData('conteudo', historia.conteudo);
+                                                setIsEditing(false);
+                                            }}
+                                            className="inline-flex items-center px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-slate-50 transition"
+                                        >
+                                            Cancelar
+                                        </button>
+                                    )}
                                     <button
                                         type="submit"
                                         disabled={processing}
@@ -97,7 +121,27 @@ export default function Index({ auth, historia, companies, currentCompanyId }) {
                                 </div>
                             </form>
                         ) : (
-                            <div className="prose max-w-none dark:prose-invert min-h-[500px]" dangerouslySetInnerHTML={{ __html: historia.conteudo || '<p class="text-slate-500">Nenhum conteúdo definido ainda.</p>' }} />
+                            <div className="space-y-4">
+                                <div className="prose max-w-none dark:prose-invert min-h-[500px]" dangerouslySetInnerHTML={{ __html: historia?.conteudo || '<p class="text-slate-500">Nenhum conteúdo definido ainda.</p>' }} />
+                                
+                                {canManage && (
+                                    <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-700">
+                                        <button
+                                            onClick={() => setIsEditing(true)}
+                                            className="inline-flex items-center px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 rounded-md font-semibold text-xs text-slate-700 dark:text-slate-300 uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+                                        >
+                                            Editar
+                                        </button>
+                                        <button
+                                            onClick={handleDelete}
+                                            disabled={processing}
+                                            className="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 disabled:opacity-25 transition"
+                                        >
+                                            Excluir
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         )}
                     </div>
                 </div>
