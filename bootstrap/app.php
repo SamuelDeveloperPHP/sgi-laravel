@@ -19,6 +19,15 @@ return Application::configure(basePath: dirname(__DIR__))
             // para detalhes de cada header e notas de hardening futuro.
             \App\Http\Middleware\SecurityHeaders::class,
         ]);
+
+        // Alias 'company.required': bloqueia acesso aos modulos enquanto
+        // o usuario nao concluir o onboarding (cadastro de empresa com
+        // CNPJ valido). Aplicado em routes/web.php nas rotas de modulos.
+        // Master admin bypassa automaticamente. Ver memoria
+        // sgi-laravel-access-rules.
+        $middleware->alias([
+            'company.required' => \App\Http\Middleware\RequireCompany::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\HttpException $e, \Illuminate\Http\Request $request) {
