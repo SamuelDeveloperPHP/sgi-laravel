@@ -48,6 +48,7 @@ class TarefaProjeto extends Model
         'cor_prioridade_id',
         'projeto_id',
         'kanban_coluna_id',
+        'repetir',
     ];
 
     public function projeto()
@@ -58,5 +59,20 @@ class TarefaProjeto extends Model
     public function kanbanColuna()
     {
         return $this->belongsTo(KanbanColuna::class, 'kanban_coluna_id');
+    }
+
+    public function comentarios()
+    {
+        return $this->hasMany(TarefaProjetoComentario::class, 'tarefa_projeto_id')->orderBy('created_at', 'desc');
+    }
+
+    public function anexos()
+    {
+        return $this->hasMany(TarefaProjetoAnexo::class, 'tarefa_projeto_id')->orderBy('created_at', 'desc');
+    }
+
+    public function checklists()
+    {
+        return $this->hasMany(TarefaProjetoChecklist::class, 'tarefa_projeto_id')->orderBy('ordem', 'asc');
     }
 }
