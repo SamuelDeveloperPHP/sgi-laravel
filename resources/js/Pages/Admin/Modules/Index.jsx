@@ -51,7 +51,7 @@ export default function Index({ auth, modules, filters }) {
             <Head title="Módulos do Sistema" />
 
             <div className="py-12">
-                <div className="max-w-[95%] mx-auto sm:px-6 lg:px-8">
+                <div className="w-full sm:px-6 lg:px-8">
                     <div className="bg-white shadow-sm sm:rounded-lg overflow-hidden border border-gray-200">
                         
                         {/* Header Action */}

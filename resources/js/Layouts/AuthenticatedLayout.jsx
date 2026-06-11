@@ -70,20 +70,27 @@ export default function AuthenticatedLayout({ header, children, fullWidth = fals
     const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-            {/* Sidebar */}
-            <Sidebar 
-                isOpen={sidebarOpen} 
-                setIsOpen={setSidebarOpen} 
-                isDarkMode={isDarkMode}
-                toggleDarkMode={toggleDarkMode}
-            />
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-300 relative font-sans text-slate-900 dark:text-slate-100">
+            {/* Ambient Background Blobs */}
+            <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+                <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-indigo-300/20 dark:bg-indigo-900/20 blur-[120px] mix-blend-multiply dark:mix-blend-screen" />
+                <div className="absolute top-[40%] -right-[10%] w-[40%] h-[60%] rounded-full bg-blue-300/20 dark:bg-blue-900/20 blur-[120px] mix-blend-multiply dark:mix-blend-screen" />
+            </div>
 
-            {/* Main content area */}
-            <div className="lg:pl-64 flex flex-col min-h-screen">
-                
-                {/* Top Header */}
-                <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8 dark:bg-gray-800 dark:border-gray-700 print:hidden">
+            <div className="relative z-10 flex min-h-screen">
+                {/* Sidebar */}
+                <Sidebar 
+                    isOpen={sidebarOpen} 
+                    setIsOpen={setSidebarOpen} 
+                    isDarkMode={isDarkMode}
+                    toggleDarkMode={toggleDarkMode}
+                />
+
+                {/* Main content area */}
+                <div className="flex-1 flex flex-col min-w-0 lg:pl-64">
+                    
+                    {/* Top Header */}
+                    <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-white/40 dark:border-slate-700/40 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8 print:hidden transition-all duration-300">
                     <button
                         type="button"
                         className="-m-2.5 p-2.5 text-gray-700 lg:hidden dark:text-gray-200"
@@ -156,7 +163,7 @@ export default function AuthenticatedLayout({ header, children, fullWidth = fals
                                     <span className="inline-flex rounded-md">
                                         <button
                                             type="button"
-                                            className="inline-flex items-center rounded-md border border-transparent bg-white px-3 py-2 text-sm font-medium leading-4 text-gray-500 transition duration-150 ease-in-out hover:text-gray-700 focus:outline-none dark:bg-gray-800 dark:text-gray-400 dark:hover:text-gray-300"
+                                            className="inline-flex items-center rounded-md border border-transparent bg-transparent px-3 py-2 text-sm font-medium leading-4 text-slate-600 transition duration-150 ease-in-out hover:text-slate-900 hover:bg-slate-100/50 focus:outline-none dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800/50"
                                         >
                                             {user.name}
                                             <svg className="-me-0.5 ms-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -182,7 +189,7 @@ export default function AuthenticatedLayout({ header, children, fullWidth = fals
 
                 {/* Page Header (Breadcrumbs/Title) */}
                 {header && (
-                    <div className="bg-white shadow dark:bg-gray-800 print:hidden">
+                    <div className="bg-white/40 dark:bg-slate-800/40 backdrop-blur-md border-b border-white/50 dark:border-slate-700/50 print:hidden">
                         <div className="w-full px-4 py-4 sm:px-6 lg:px-8">
                             {header}
                         </div>
@@ -190,11 +197,10 @@ export default function AuthenticatedLayout({ header, children, fullWidth = fals
                 )}
 
                 {/* Main Content */}
-                <main className="flex-1">
-                    <div className="w-full py-4 px-4 sm:px-6 lg:px-8">
-                        {children}
-                    </div>
+                <main className="flex-1 animate-fade-in">
+                    {children}
                 </main>
+            </div>
             </div>
         </div>
     );

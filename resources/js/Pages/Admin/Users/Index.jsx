@@ -39,38 +39,38 @@ export default function Index({ auth, users, filters, metrics, flash }) {
                     
                     {/* Metrics Section */}
                     {metrics && (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                            <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700/50 flex items-center gap-3">
-                                <div className="p-3 bg-violet-50 dark:bg-violet-500/10 rounded-lg text-violet-600 dark:text-violet-400">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl p-5 rounded-2xl shadow-soft border border-white/50 dark:border-slate-700/50 flex items-center gap-4 hover:shadow-glass hover:-translate-y-1 transition-all duration-300">
+                                <div className="p-3.5 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl text-indigo-600 dark:text-indigo-400">
                                     <Users className="w-6 h-6" />
                                 </div>
                                 <div>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Total de Usuários</p>
-                                    <p className="text-2xl font-bold text-slate-900 dark:text-white">{metrics.total}</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">Total de Usuários</p>
+                                    <p className="text-3xl font-bold text-slate-900 dark:text-white mt-1">{metrics.total}</p>
                                 </div>
                             </div>
-                            <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700/50 flex items-center gap-3">
-                                <div className="p-3 bg-amber-50 dark:bg-amber-500/10 rounded-lg text-amber-600 dark:text-amber-400">
+                            <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl p-5 rounded-2xl shadow-soft border border-white/50 dark:border-slate-700/50 flex items-center gap-4 hover:shadow-glass hover:-translate-y-1 transition-all duration-300">
+                                <div className="p-3.5 bg-amber-50 dark:bg-amber-500/10 rounded-xl text-amber-600 dark:text-amber-400">
                                     <ShieldCheck className="w-6 h-6" />
                                 </div>
                                 <div>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Administradores Master</p>
-                                    <p className="text-2xl font-bold text-slate-900 dark:text-white">{metrics.master}</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">Admins Master</p>
+                                    <p className="text-3xl font-bold text-slate-900 dark:text-white mt-1">{metrics.master}</p>
                                 </div>
                             </div>
-                            <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700/50 flex items-center gap-3">
-                                <div className="p-3 bg-blue-50 dark:bg-blue-500/10 rounded-lg text-blue-600 dark:text-blue-400">
+                            <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl p-5 rounded-2xl shadow-soft border border-white/50 dark:border-slate-700/50 flex items-center gap-4 hover:shadow-glass hover:-translate-y-1 transition-all duration-300">
+                                <div className="p-3.5 bg-blue-50 dark:bg-blue-500/10 rounded-xl text-blue-600 dark:text-blue-400">
                                     <UserIcon className="w-6 h-6" />
                                 </div>
                                 <div>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Usuários Padrão</p>
-                                    <p className="text-2xl font-bold text-slate-900 dark:text-white">{metrics.standard}</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">Usuários Padrão</p>
+                                    <p className="text-3xl font-bold text-slate-900 dark:text-white mt-1">{metrics.standard}</p>
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    <div className="flex flex-col md:flex-row justify-between items-center gap-3 bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700/50">
+                    <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl p-5 rounded-2xl shadow-soft border border-white/50 dark:border-slate-700/50">
                         {/* Search Input */}
                         <div className="relative w-full md:w-96">
                             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
@@ -78,7 +78,7 @@ export default function Index({ auth, users, filters, metrics, flash }) {
                             </div>
                             <input
                                 type="text"
-                                className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm rounded-xl focus:ring-violet-500 focus:border-violet-500 block w-full pl-10 p-2.5 transition-colors"
+                                className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm rounded-xl focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 p-2.5 transition-all shadow-inner"
                                 placeholder="Buscar por nome ou e-mail..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
@@ -87,7 +87,7 @@ export default function Index({ auth, users, filters, metrics, flash }) {
 
                         <Link 
                             href={route('admin.users.create')} 
-                            className="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white px-5 py-2.5 rounded-xl transition-all font-medium text-sm shadow-md hover:shadow-lg w-full md:w-auto justify-center"
+                            className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white px-5 py-2.5 rounded-xl transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 font-medium text-sm shadow-soft hover:shadow-lg w-full md:w-auto justify-center"
                         >
                             <Plus className="w-4 h-4" /> Novo Usuário
                         </Link>
@@ -104,10 +104,10 @@ export default function Index({ auth, users, filters, metrics, flash }) {
                         </div>
                     )}
 
-                    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700/50 overflow-hidden">
+                    <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl rounded-2xl shadow-soft border border-white/50 dark:border-slate-700/50 overflow-hidden">
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm text-left text-slate-500 dark:text-slate-400">
-                                <thead className="text-xs text-slate-700 uppercase bg-slate-50 dark:bg-slate-700/50 dark:text-slate-300">
+                                <thead className="text-xs text-slate-500 uppercase tracking-wider bg-slate-50/50 dark:bg-slate-800/50 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700/50">
                                     <tr>
                                         <th className="px-4 py-2">Nome</th>
                                         <th className="px-4 py-2">E-mail</th>

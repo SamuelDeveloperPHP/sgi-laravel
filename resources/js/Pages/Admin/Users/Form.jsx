@@ -66,7 +66,7 @@ export default function Form({ auth, user, companies, roles, modules, isEdit }) 
             <Head title={isEdit ? 'Editar Usuário' : 'Novo Usuário'} />
 
             <div className="py-12">
-                <div className="max-w-6xl mx-auto sm:px-6 lg:px-8 space-y-8">
+                <div className="w-full sm:px-6 lg:px-8 space-y-8">
                     
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Gerenciamento de Conta</h2>

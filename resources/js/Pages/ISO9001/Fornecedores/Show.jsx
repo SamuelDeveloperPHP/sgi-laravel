@@ -129,7 +129,7 @@ export default function Show({ auth, fornecedor, criteriosPadrao }) {
             <Head title={`Fornecedor: ${fornecedor.razao_social}`} />
 
             <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                <div className="w-full sm:px-6 lg:px-8">
 
                     {/* HEADER INFO */}
                     <div className="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg mb-6 p-6 flex flex-col md:flex-row items-center justify-between">

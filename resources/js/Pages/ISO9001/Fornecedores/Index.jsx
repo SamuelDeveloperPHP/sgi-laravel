@@ -66,7 +66,7 @@ export default function Index({ auth, fornecedores, filters, companies, currentC
             <Head title="Fornecedores" />
 
             <div className="py-12">
-                <div className="max-w-[95%] mx-auto sm:px-6 lg:px-8">
+                <div className="w-full sm:px-6 lg:px-8">
                     
                     {isMasterAdmin && (
                         <div className="mb-6 bg-white dark:bg-slate-800 p-4 rounded-lg shadow">

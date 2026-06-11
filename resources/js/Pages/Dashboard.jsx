@@ -36,14 +36,15 @@ export default function Dashboard({ auth, stats, recent_nc, recent_pa }) {
                 <div className="w-full sm:px-6 lg:px-8 space-y-6">
                     
                     {/* Welcome Banner */}
-                    <div className="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl p-6 shadow-lg text-white">
-                        <h3 className="text-2xl font-bold mb-2">Bem-vindo(a) ao seu novo SGI, {auth.user.name}!</h3>
-                        <p className="text-emerald-50 opacity-90">Aqui está o resumo atualizado do seu sistema de gestão de qualidade e segurança.</p>
+                    <div className="bg-gradient-to-r from-indigo-600 to-blue-600 rounded-3xl p-8 shadow-glass text-white relative overflow-hidden">
+                        <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl"></div>
+                        <h3 className="text-3xl font-bold mb-2 tracking-tight">Bem-vindo(a) ao seu novo SGI, {auth.user.name}!</h3>
+                        <p className="text-indigo-100 text-lg opacity-90 font-medium">Aqui está o resumo atualizado do seu sistema de gestão de qualidade e segurança.</p>
                     </div>
 
                     {/* KPIs */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700/50 hover:shadow-md transition-shadow">
+                        <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl rounded-3xl p-6 shadow-soft border border-white/50 dark:border-slate-700/50 hover:shadow-glass hover:-translate-y-1 transition-all duration-300">
                             <div className="flex justify-between items-start">
                                 <div>
                                     <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total de Não Conformidades</p>
@@ -55,7 +56,7 @@ export default function Dashboard({ auth, stats, recent_nc, recent_pa }) {
                             </div>
                         </div>
 
-                        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700/50 hover:shadow-md transition-shadow">
+                        <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl rounded-3xl p-6 shadow-soft border border-white/50 dark:border-slate-700/50 hover:shadow-glass hover:-translate-y-1 transition-all duration-300">
                             <div className="flex justify-between items-start">
                                 <div>
                                     <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Planos de Ação Abertos</p>
@@ -67,7 +68,7 @@ export default function Dashboard({ auth, stats, recent_nc, recent_pa }) {
                             </div>
                         </div>
 
-                        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700/50 hover:shadow-md transition-shadow">
+                        <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl rounded-3xl p-6 shadow-soft border border-white/50 dark:border-slate-700/50 hover:shadow-glass hover:-translate-y-1 transition-all duration-300">
                             <div className="flex justify-between items-start">
                                 <div>
                                     <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Auditorias Internas</p>
@@ -82,7 +83,7 @@ export default function Dashboard({ auth, stats, recent_nc, recent_pa }) {
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         {/* Gráfico */}
-                        <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/50 p-6">
+                        <div className="lg:col-span-2 bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl rounded-3xl shadow-soft border border-white/50 dark:border-slate-700/50 p-6 transition-all duration-300 hover:shadow-glass">
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Volume de Registros</h3>
                                 <TrendingUp className="w-5 h-5 text-slate-400" />
@@ -104,7 +105,7 @@ export default function Dashboard({ auth, stats, recent_nc, recent_pa }) {
                         </div>
 
                         {/* Atividades Recentes */}
-                        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/50 p-6">
+                        <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl rounded-3xl shadow-soft border border-white/50 dark:border-slate-700/50 p-6 transition-all duration-300 hover:shadow-glass">
                             <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-6">Últimas Não Conformidades</h3>
                             <div className="space-y-4">
                                 {recent_nc.length > 0 ? recent_nc.map((nc) => (

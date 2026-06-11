@@ -69,7 +69,7 @@ export default function Index({ auth, historia, companies, currentCompanyId }) {
             <Head title="Nossa História" />
 
             <div className="py-12">
-                <div className="max-w-[95%] mx-auto sm:px-6 lg:px-8 space-y-6">
+                <div className="w-full sm:px-6 lg:px-8 space-y-6">
                     <div className="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                         <div className="flex justify-between items-center mb-6">
                             <div className="flex items-center gap-2">

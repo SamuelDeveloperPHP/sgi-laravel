@@ -66,7 +66,7 @@ export default function Index({ auth, documentos, companies, currentCompanyId, u
             <Head title="Controle de Documentos" />
 
             <div className="py-12">
-                <div className="max-w-screen-2xl mx-auto sm:px-6 lg:px-8">
+                <div className="w-full sm:px-6 lg:px-8">
                     
                     <div className="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg border border-slate-200 dark:border-slate-700">
                         <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">

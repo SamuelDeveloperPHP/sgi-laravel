@@ -104,7 +104,7 @@ export default function Index({ auth, politica, companies, users, currentCompany
             <Head title="Política da Qualidade" />
 
             <div className="py-12">
-                <div className="max-w-[95%] mx-auto sm:px-6 lg:px-8 space-y-6">
+                <div className="w-full sm:px-6 lg:px-8 space-y-6">
                     
                     {/* Header de Status */}
                     <div className="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg p-6 flex justify-between items-center">
