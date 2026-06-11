@@ -50,6 +50,7 @@ class CompleteOnboardingRequest extends FormRequest
     public function rules(): array
     {
         return [
+            // Identificacao
             'nome_fantasia' => ['required', 'string', 'max:255'],
             'razao_social'  => ['required', 'string', 'max:255'],
             'cnpj' => [
@@ -63,22 +64,45 @@ class CompleteOnboardingRequest extends FormRequest
                     }
                 },
             ],
+
+            // Endereco (opcional - alguns vem do ReceitaWS, outros
+            // o usuario preenche). Limites condizentes com a migration.
+            'cep'          => ['nullable', 'string', 'max:10'],
+            'logradouro'   => ['nullable', 'string', 'max:255'],
+            'numero'       => ['nullable', 'string', 'max:20'],
+            'complemento'  => ['nullable', 'string', 'max:255'],
+            'bairro'       => ['nullable', 'string', 'max:255'],
+            'cidade'       => ['nullable', 'string', 'max:255'],
+            'estado'       => ['nullable', 'string', 'size:2'],
+
+            // Contato corporativo
+            'email_corporativo' => ['nullable', 'email', 'max:255'],
+            'telefone'          => ['nullable', 'string', 'max:20'],
+
+            // Observacoes
+            'observacoes' => ['nullable', 'string', 'max:5000'],
+
             // Defesa em profundidade contra mass-assignment de campos
             // que jamais devem vir do cliente nesta rota:
-            'company_id'      => 'prohibited',
-            'is_master_admin' => 'prohibited',
-            'status'          => 'prohibited',
+            'company_id'           => 'prohibited',
+            'is_master_admin'      => 'prohibited',
+            'status'               => 'prohibited',
+            'nome_administrador'   => 'prohibited', // setado pelo backend
+            'email_administrador'  => 'prohibited', // setado pelo backend
+            'criterios_avaliacao_fornecedor' => 'prohibited',
         ];
     }
 
     public function messages(): array
     {
         return [
-            'nome_fantasia.required' => 'Informe o nome fantasia da empresa.',
-            'razao_social.required'  => 'Informe a razão social.',
-            'cnpj.required'          => 'Informe o CNPJ.',
-            'cnpj.size'              => 'O CNPJ deve ter exatamente 14 dígitos (sem máscara).',
-            'cnpj.unique'            => 'Já existe uma empresa cadastrada com este CNPJ.',
+            'nome_fantasia.required'   => 'Informe o nome fantasia da empresa.',
+            'razao_social.required'    => 'Informe a razão social.',
+            'cnpj.required'            => 'Informe o CNPJ.',
+            'cnpj.size'                => 'O CNPJ deve ter exatamente 14 dígitos (sem máscara).',
+            'cnpj.unique'              => 'Já existe uma empresa cadastrada com este CNPJ.',
+            'estado.size'              => 'A UF deve ter exatamente 2 letras (ex: SP, RJ).',
+            'email_corporativo.email'  => 'Informe um e-mail corporativo válido.',
         ];
     }
 }

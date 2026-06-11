@@ -115,31 +115,65 @@ class OnboardingController extends Controller
 
         try {
             $companyId = DB::transaction(function () use ($request, $user) {
+                $validated = $request->validated();
+
+                // Cria a empresa com TODOS os dados validados +
+                // nome/email do administrador setados pelo backend
+                // (nao confiavel via form input - sao tomados do
+                // proprio user autenticado para garantir consistencia)
                 $company = Company::create([
-                    'nome_fantasia' => $request->validated('nome_fantasia'),
-                    'razao_social' => $request->validated('razao_social'),
-                    'cnpj' => $request->validated('cnpj'),
-                    'status' => true,
+                    // Identificacao
+                    'nome_fantasia' => $validated['nome_fantasia'],
+                    'razao_social'  => $validated['razao_social'],
+                    'cnpj'          => $validated['cnpj'],
+                    'status'        => true,
+
+                    // Endereco (campos opcionais via ?? null)
+                    'cep'         => $validated['cep']         ?? null,
+                    'logradouro'  => $validated['logradouro']  ?? null,
+                    'numero'      => $validated['numero']      ?? null,
+                    'complemento' => $validated['complemento'] ?? null,
+                    'bairro'      => $validated['bairro']      ?? null,
+                    'cidade'      => $validated['cidade']      ?? null,
+                    'estado'      => $validated['estado']      ?? null,
+
+                    // Contato corporativo
+                    'email_corporativo' => $validated['email_corporativo'] ?? null,
+                    'telefone'          => $validated['telefone']          ?? null,
+
+                    // Rastreabilidade: quem cadastrou a empresa
+                    // (regra de negocio: bloquear ressubmissao com
+                    // outro email para mesmo CNPJ - como CNPJ ja e
+                    // unique, isso so vale para rastreamento/audit)
+                    'nome_administrador'  => $user->name,
+                    'email_administrador' => $user->email,
+
+                    'observacoes' => $validated['observacoes'] ?? null,
                 ]);
 
                 // Vincula usuário à empresa
                 $user->company_id = $company->id;
                 $user->save();
 
-                // Também vincula via pivot (companies pode ter relação N:N)
+                // Vincula via pivot company_user (N:N para suportar
+                // futuro tenant switching). Master admin nao precisa
+                // disso pois o relacionamento e sobrescrito no model.
                 $user->companies()->syncWithoutDetaching([$company->id]);
 
-                // Atribui role default "Administrador da Empresa" — primeiro
-                // usuário da empresa vira admin dela. Se a role não existir,
-                // ignora silenciosamente (não bloqueia onboarding).
-                $defaultRole = Role::where('name', 'Administrador da Empresa')->first();
+                // Atribui role 'Administrador' (memoria sgi-laravel-
+                // access-rules item 5). E o papel padrao de quem
+                // cadastrou a empresa. Se a role nao existir
+                // (BusinessRolesSeeder nao rodou), ignora.
+                $defaultRole = Role::where('name', 'Administrador')->first();
                 if ($defaultRole) {
                     $user->assignRole($defaultRole);
                 }
 
-                Log::info('Onboarding concluído', [
-                    'user_id' => $user->id,
+                Log::info('Onboarding concluido', [
+                    'user_id'    => $user->id,
+                    'user_email' => $user->email,
                     'company_id' => $company->id,
+                    'cnpj'       => $company->cnpj,
                 ]);
 
                 return $company->id;
