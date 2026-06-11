@@ -76,8 +76,44 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsTo(Company::class);
     }
 
+    /**
+     * Relacionamento N:N com Company via pivot company_user.
+     *
+     * COMPORTAMENTO ESPECIAL para master admin:
+     *   Master admin tem acesso GLOBAL a todas as empresas (regra 1
+     *   da memoria sgi-laravel-access-rules). Para evitar bloat de
+     *   pivot (uma linha por empresa por master admin), sobrescrevemos
+     *   a query da relacao para retornar Company::all() quando
+     *   is_master_admin = true.
+     *
+     *   Isso mantem o codigo cliente simples: $user->companies sempre
+     *   retorna a lista de empresas acessiveis, independente do papel.
+     *
+     *   UI (Admin/Users/Index, Admin/Users/Form) e outros lugares que
+     *   iteram sobre user.companies veem master admin como se ele
+     *   "pertencesse" a todas as empresas, refletindo a realidade do
+     *   acesso global.
+     */
     public function companies()
     {
+        if ($this->is_master_admin) {
+            // Master admin: faz a relacao apontar para companies
+            // diretamente, sem JOIN no pivot. Equivalente a
+            // Company::query() mas mantem o tipo Relation.
+            $relation = $this->belongsToMany(Company::class);
+            // Substitui a query subjacente por SELECT * FROM companies
+            // sem filtro algum.
+            $query = $relation->getQuery();
+            $query->getQuery()->wheres = [];
+            $query->getQuery()->joins = [];
+            $query->getQuery()->bindings = [
+                'select' => [], 'from' => [], 'join' => [], 'where' => [],
+                'groupBy' => [], 'having' => [], 'order' => [], 'union' => [],
+                'unionOrder' => [],
+            ];
+            return $relation;
+        }
+
         return $this->belongsToMany(Company::class);
     }
 }
