@@ -194,12 +194,18 @@ function NavGroup({ item }) {
                                 key={child.name}
                                 href={route(child.href)}
                                 className={`
-                                    block rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200
+                                    flex items-center gap-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200
                                     ${isChildActive 
                                         ? 'bg-indigo-50/80 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300 shadow-sm' 
                                         : 'text-slate-500 hover:text-indigo-600 hover:bg-slate-50/80 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/50'}
                                 `}
                             >
+                                {child.icon && (
+                                    <DynamicIcon 
+                                        iconName={child.icon} 
+                                        className={`h-4 w-4 shrink-0 transition-colors duration-200 ${isChildActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-white'}`} 
+                                    />
+                                )}
                                 {child.name}
                             </Link>
                         );

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm, router } from '@inertiajs/react';
-import { Plus, Edit, Trash2, Search, Filter } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Filter, LayoutDashboard, FileCheck, AlertTriangle, Target, Building, Users, Briefcase, Award } from 'lucide-react';
 import Swal from 'sweetalert2';
 
 export default function Index({ auth, modules, filters }) {
@@ -35,11 +35,15 @@ export default function Index({ auth, modules, filters }) {
         });
     };
 
+    const lucideIcons = { LayoutDashboard, FileCheck, AlertTriangle, Target, Building, Users, Briefcase, Award };
+
     const DynamicIcon = ({ iconName, className = "h-5 w-5" }) => {
         if (!iconName) return <div className={className} />;
         if (iconName.startsWith('fa-') || iconName.startsWith('fas ') || iconName.startsWith('ri-')) {
             return <i className={`${iconName} ${className} text-indigo-600`} aria-hidden="true"></i>;
         }
+        const IconComponent = lucideIcons[iconName];
+        if (IconComponent) return <IconComponent className={`${className} text-indigo-600`} aria-hidden="true" />;
         return <i className={`fas fa-cube ${className} text-indigo-600`} aria-hidden="true"></i>; // fallback estético
     };
 

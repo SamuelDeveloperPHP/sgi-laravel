@@ -95,6 +95,7 @@ class HandleInertiaRequests extends Middleware
                                                     'name' => $child->name,
                                                     'href' => $child->route_name,
                                                     'permission' => $child->slug,
+                                                    'icon' => $child->icon,
                                                 ];
                                             })->values()->toArray(),
             ];
