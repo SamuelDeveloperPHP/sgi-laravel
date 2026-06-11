@@ -176,7 +176,7 @@ export default function Form({ auth, user, companies, roles, modules, isEdit }) 
                                             >
                                                 <div className="flex flex-col text-left">
                                                     <span className="font-bold text-indigo-900 dark:text-indigo-300">{mod.name}</span>
-                                                    <span className="text-xs text-slate-500">Módulo de {mod.name.toLowerCase()}</span>
+                                                    <span className="text-xs text-slate-500">Módulo de {String(mod.name).toLowerCase()}</span>
                                                 </div>
                                                 {isExpanded ? <ChevronUp className="w-5 h-5 text-indigo-500" /> : <ChevronDown className="w-5 h-5 text-indigo-500" />}
                                             </button>
@@ -198,12 +198,12 @@ export default function Form({ auth, user, companies, roles, modules, isEdit }) 
                                                                 <tr className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                                                                     <td className="py-4 px-4">
                                                                         <div className="font-medium text-slate-900 dark:text-slate-100">{mod.name}</div>
-                                                                        <div className="text-xs text-slate-500 dark:text-slate-400 font-mono">modulo.{mod.name.toLowerCase()}</div>
+                                                                        <div className="text-xs text-slate-500 dark:text-slate-400 font-mono">modulo.{String(mod.name).toLowerCase()}</div>
                                                                     </td>
                                                                     {actionColumns.map(act => {
                                                                         // Encontra se existe uma permissão para essa ação nesse módulo
                                                                         // Ex: act = 'view', module = 'Companies' => expect 'view-companies'
-                                                                        const expectedName = `${act}-${mod.name.toLowerCase()}`;
+                                                                        const expectedName = `${act}-${String(mod.name).toLowerCase()}`;
                                                                         const permObj = mod.permissions.find(p => p.action === act || p.name === expectedName);
                                                                         
                                                                         if(!permObj) {

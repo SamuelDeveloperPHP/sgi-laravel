@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreAuditoriaRequest;
 use App\Http\Requests\UpdateAuditoriaRequest;
+use App\Http\Requests\DestroyAuditoriaRequest;
 use App\Models\AuditoriaInterna;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class AuditoriaController extends Controller
 {
@@ -34,9 +37,21 @@ class AuditoriaController extends Controller
 
     public function store(StoreAuditoriaRequest $request)
     {
-        AuditoriaInterna::create($request->validated());
+        DB::beginTransaction();
+        try {
+            AuditoriaInterna::create($request->validated());
 
-        return redirect()->route('auditorias.index')->with('message', 'Auditoria cadastrada com sucesso!');
+            Log::info("Ação store realizada pelo usuário " . auth()->user()->id);
+            DB::commit();
+            return redirect()->route('auditorias.index')->with('message', 'Auditoria cadastrada com sucesso!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpException) {
+                throw $e;
+            }
+            Log::error($e->getMessage());
+            return back()->with('error', 'Erro interno ao realizar operação.');
+        }
     }
 
     public function show(AuditoriaInterna $auditoria)
@@ -56,14 +71,38 @@ class AuditoriaController extends Controller
 
     public function update(UpdateAuditoriaRequest $request, AuditoriaInterna $auditoria)
     {
-        $auditoria->update($request->validated());
+        DB::beginTransaction();
+        try {
+            $auditoria->update($request->validated());
 
-        return redirect()->route('auditorias.index')->with('message', 'Auditoria atualizada com sucesso!');
+            Log::info("Ação update realizada pelo usuário " . auth()->user()->id);
+            DB::commit();
+            return redirect()->route('auditorias.index')->with('message', 'Auditoria atualizada com sucesso!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpException) {
+                throw $e;
+            }
+            Log::error($e->getMessage());
+            return back()->with('error', 'Erro interno ao realizar operação.');
+        }
     }
 
-    public function destroy(AuditoriaInterna $auditoria)
+    public function destroy(DestroyAuditoriaRequest $request, AuditoriaInterna $auditoria)
     {
-        $auditoria->delete();
-        return redirect()->route('auditorias.index')->with('message', 'Auditoria excluída com sucesso!');
+        DB::beginTransaction();
+        try {
+            $auditoria->delete();
+            Log::info("Ação destroy realizada pelo usuário " . auth()->user()->id);
+            DB::commit();
+            return redirect()->route('auditorias.index')->with('message', 'Auditoria excluída com sucesso!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpException) {
+                throw $e;
+            }
+            Log::error($e->getMessage());
+            return back()->with('error', 'Erro interno ao realizar operação.');
+        }
     }
 }

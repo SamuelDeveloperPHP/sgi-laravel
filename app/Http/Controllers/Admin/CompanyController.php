@@ -9,11 +9,31 @@ use Inertia\Inertia;
 
 class CompanyController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $companies = Company::orderBy('nome_fantasia')->paginate(10);
+        $search = $request->input('search');
+
+        $query = Company::query();
+
+        if ($search) {
+            $query->where('nome_fantasia', 'like', "%{$search}%")
+                  ->orWhere('razao_social', 'like', "%{$search}%")
+                  ->orWhere('cnpj', 'like', "%{$search}%");
+        }
+
+        $companies = $query->orderBy('nome_fantasia')->paginate(10)->withQueryString();
+
+        $activeCount = Company::where('status', true)->count();
+        $inactiveCount = Company::where('status', false)->count();
+
         return Inertia::render('Admin/Companies/Index', [
-            'companies' => $companies
+            'companies' => $companies,
+            'filters' => $request->only('search'),
+            'metrics' => [
+                'active' => $activeCount,
+                'inactive' => $inactiveCount,
+                'total' => $activeCount + $inactiveCount,
+            ]
         ]);
     }
 

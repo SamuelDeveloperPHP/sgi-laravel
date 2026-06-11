@@ -14,11 +14,30 @@ use Spatie\Permission\Models\Permission;
 
 class UserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::with('companies')->orderBy('name')->paginate(10);
+        $search = $request->input('search');
+
+        $query = User::with('companies');
+
+        if ($search) {
+            $query->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+        }
+
+        $users = $query->orderBy('name')->paginate(10)->withQueryString();
+
+        $masterCount = User::where('is_master_admin', true)->count();
+        $standardCount = User::where('is_master_admin', false)->count();
+
         return Inertia::render('Admin/Users/Index', [
-            'users' => $users
+            'users' => $users,
+            'filters' => $request->only('search'),
+            'metrics' => [
+                'master' => $masterCount,
+                'standard' => $standardCount,
+                'total' => $masterCount + $standardCount,
+            ]
         ]);
     }
 

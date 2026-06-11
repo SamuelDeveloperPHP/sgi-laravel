@@ -8,6 +8,9 @@ use App\Models\NaoConformidade;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use App\Http\Requests\DestroyNaoConformidadeRequest;
 
 class NaoConformidadeController extends Controller
 {
@@ -50,31 +53,38 @@ class NaoConformidadeController extends Controller
     public function store(StoreNaoConformidadeRequest $request)
     {
         $this->authorize('create', NaoConformidade::class);
-        $validated = $request->validated();
+        
+        DB::beginTransaction();
+        try {
+            $validated = $request->validated();
 
-        if (isset($validated['evidencias']) && is_array($validated['evidencias'])) {
-            // Namespace storage por tenant: 'ncs/<company_id>/<hash>.ext'.
-            // Fase 1 mantém o disco 'public' (frontend continua usando
-            // /storage/...) mas introduz boundary tenant na URL.
-            // TODO Fase 2: migrar para disco privado + signed URLs com
-            // checagem de tenant no momento do download (impede enumeração
-            // direta de URL pública).
-            $companyId = auth()->user()->company_id ?? 'sem-tenant';
-            foreach ($validated['evidencias'] as $index => $evidencia) {
-                if (isset($evidencia['foto']) && $request->hasFile("evidencias.{$index}.foto")) {
-                    $path = $request->file("evidencias.{$index}.foto")
-                        ->store("ncs/{$companyId}", 'public');
-                    $validated['evidencias'][$index]['foto'] = $path;
+            if (isset($validated['evidencias']) && is_array($validated['evidencias'])) {
+                $companyId = auth()->user()->company_id ?? 'sem-tenant';
+                foreach ($validated['evidencias'] as $index => $evidencia) {
+                    if (isset($evidencia['foto']) && $request->hasFile("evidencias.{$index}.foto")) {
+                        $path = $request->file("evidencias.{$index}.foto")
+                            ->store("ncs/{$companyId}", 'public');
+                        $validated['evidencias'][$index]['foto'] = $path;
+                    }
                 }
             }
+
+            $validated['dataAbertura'] = now();
+            $validated['user_create'] = auth()->id();
+
+            NaoConformidade::create($validated);
+
+            Log::info("Ação Store Nao Conformidade realizada pelo usuário " . auth()->id());
+            DB::commit();
+            return redirect()->route('nao-conformidades.index')->with('message', 'Relatório de Não Conformidade criado com sucesso!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpException) {
+                throw $e;
+            }
+            Log::error($e->getMessage());
+            return back()->with('error', 'Erro interno ao realizar operação.');
         }
-
-        $validated['dataAbertura'] = now();
-        $validated['user_create'] = auth()->id();
-
-        NaoConformidade::create($validated);
-
-        return redirect()->route('nao-conformidades.index')->with('message', 'Relatório de Não Conformidade criado com sucesso!');
     }
 
     public function show($id)
@@ -100,36 +110,55 @@ class NaoConformidadeController extends Controller
     {
         $nc = NaoConformidade::findOrFail($id);
         $this->authorize('update', $nc);
-        $validated = $request->validated();
+        
+        DB::beginTransaction();
+        try {
+            $validated = $request->validated();
 
-        if (isset($validated['evidencias']) && is_array($validated['evidencias'])) {
-            // Namespace storage por tenant: 'ncs/<company_id>/<hash>.ext'.
-            // Fase 1 mantém o disco 'public' (frontend continua usando
-            // /storage/...) mas introduz boundary tenant na URL.
-            // TODO Fase 2: migrar para disco privado + signed URLs com
-            // checagem de tenant no momento do download (impede enumeração
-            // direta de URL pública).
-            $companyId = auth()->user()->company_id ?? 'sem-tenant';
-            foreach ($validated['evidencias'] as $index => $evidencia) {
-                if (isset($evidencia['foto']) && $request->hasFile("evidencias.{$index}.foto")) {
-                    $path = $request->file("evidencias.{$index}.foto")
-                        ->store("ncs/{$companyId}", 'public');
-                    $validated['evidencias'][$index]['foto'] = $path;
+            if (isset($validated['evidencias']) && is_array($validated['evidencias'])) {
+                $companyId = auth()->user()->company_id ?? 'sem-tenant';
+                foreach ($validated['evidencias'] as $index => $evidencia) {
+                    if (isset($evidencia['foto']) && $request->hasFile("evidencias.{$index}.foto")) {
+                        $path = $request->file("evidencias.{$index}.foto")
+                            ->store("ncs/{$companyId}", 'public');
+                        $validated['evidencias'][$index]['foto'] = $path;
+                    }
                 }
             }
+
+            $validated['user_edit'] = auth()->id();
+            $nc->update($validated);
+
+            Log::info("Ação Update Nao Conformidade realizada pelo usuário " . auth()->id());
+            DB::commit();
+            return redirect()->route('nao-conformidades.index')->with('message', 'Relatório de Não Conformidade atualizado!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpException) {
+                throw $e;
+            }
+            Log::error($e->getMessage());
+            return back()->with('error', 'Erro interno ao realizar operação.');
         }
-
-        $validated['user_edit'] = auth()->id();
-        $nc->update($validated);
-
-        return redirect()->route('nao-conformidades.index')->with('message', 'Relatório de Não Conformidade atualizado!');
     }
 
-    public function destroy($id)
+    public function destroy(DestroyNaoConformidadeRequest $request, $id)
     {
-        $nc = NaoConformidade::findOrFail($id);
-        $this->authorize('delete', $nc);
-        $nc->delete();
-        return redirect()->route('nao-conformidades.index')->with('message', 'Não Conformidade excluída com sucesso!');
+        DB::beginTransaction();
+        try {
+            $nc = NaoConformidade::findOrFail($id);
+            $nc->delete();
+            
+            Log::info("Ação Destroy Nao Conformidade realizada pelo usuário " . auth()->id());
+            DB::commit();
+            return redirect()->route('nao-conformidades.index')->with('message', 'Não Conformidade excluída com sucesso!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpException) {
+                throw $e;
+            }
+            Log::error($e->getMessage());
+            return back()->with('error', 'Erro interno ao realizar operação.');
+        }
     }
 }

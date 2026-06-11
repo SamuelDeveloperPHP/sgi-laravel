@@ -8,7 +8,8 @@ class UpdatePlanoAcaoRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $planoAcao = \App\Models\PlanoAcao::findOrFail($this->route('id'));
+        return auth()->check() && auth()->user()->can('update', $planoAcao);
     }
 
     public function rules(): array
