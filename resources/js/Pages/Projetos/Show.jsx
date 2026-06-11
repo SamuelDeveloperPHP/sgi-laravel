@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import TextInput from '@/Components/TextInput';
 import PrimaryButton from '@/Components/PrimaryButton';
+import TaskModal from './Components/TaskModal';
 import axios from 'axios';
 
 export default function Show({ projeto }) {
@@ -23,6 +24,7 @@ export default function Show({ projeto }) {
     const [addingCol, setAddingCol] = useState(false);
     const [editingColId, setEditingColId] = useState(null);
     const [editColName, setEditColName] = useState('');
+    const [selectedTask, setSelectedTask] = useState(null);
 
     const handleAddColumn = (e) => {
         e.preventDefault();
@@ -246,6 +248,7 @@ export default function Show({ projeto }) {
                                                                                 ref={provided.innerRef}
                                                                                 {...provided.draggableProps}
                                                                                 {...provided.dragHandleProps}
+                                                                                onClick={() => setSelectedTask(tarefa)}
                                                                                 className={`bg-white dark:bg-gray-800 p-3.5 rounded-md shadow-[0_1px_3px_rgba(0,0,0,0.1)] border border-gray-200/60 dark:border-gray-700 group cursor-grab active:cursor-grabbing hover:border-indigo-300 dark:hover:border-indigo-500 transition-all ${snapshot.isDragging ? 'shadow-xl rotate-2 ring-2 ring-indigo-500 z-50' : 'hover:-translate-y-0.5 hover:shadow-md'}`}
                                                                             >
                                                                                 <div className="flex justify-between items-start mb-2">
@@ -351,6 +354,13 @@ export default function Show({ projeto }) {
                     </DragDropContext>
                 </div>
             </div>
+
+            <TaskModal 
+                isOpen={!!selectedTask} 
+                onClose={() => setSelectedTask(null)} 
+                task={selectedTask ? columns.flatMap(c => c.tarefas).find(t => t.id === selectedTask.id) : null} 
+                columns={columns} 
+            />
         </AuthenticatedLayout>
     );
 }
