@@ -15,14 +15,33 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth', 'verified', 'company.required'])
     ->name('dashboard');
+
+// Onboarding obrigatorio (autenticado mas SEM company ainda).
+// Master admin bypassa o middleware company.required automaticamente.
+// Ver memoria sgi-laravel-access-rules para a regra de negocio.
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/onboarding/company', [\App\Http\Controllers\OnboardingController::class, 'showCompanyForm'])
+        ->name('onboarding.company');
+    Route::post('/onboarding/company', [\App\Http\Controllers\OnboardingController::class, 'completeOnboarding'])
+        ->middleware('throttle:register')
+        ->name('onboarding.complete');
+    Route::post('/onboarding/lookup-cnpj', [\App\Http\Controllers\OnboardingController::class, 'lookupCnpj'])
+        ->middleware('throttle:6,1') // 6 lookups/min para nao estourar a ReceitaWS
+        ->name('onboarding.lookup-cnpj');
+});
 
 // 'verified' exige email_verified_at != NULL. Novos usuários registrados
 // via /register precisam clicar no link de verificação enviado por e-mail.
 // Em dev/staging sem SMTP, considere setar email_verified_at via tinker
 // ou desabilitar este middleware no .env local.
-Route::middleware(['auth', 'verified'])->group(function () {
+//
+// 'company.required' adiciona um terceiro gate: usuario precisa ter
+// concluido o onboarding (companies.cnpj cadastrado e users.company_id
+// populado). Master admin bypassa. Sem isso, todas as queries via
+// TenantScope retornam vazio.
+Route::middleware(['auth', 'verified', 'company.required'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -135,6 +154,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 // Admin Routes (Master Admin Only)
+// Nao aplica 'company.required' porque CheckMasterAdmin ja garante
+// que so master admin chega aqui, e master admin nao precisa de
+// company_id (acesso global por design).
 Route::middleware(['auth', 'verified', \App\Http\Middleware\CheckMasterAdmin::class])->prefix('admin')->name('admin.')->group(function () {
     Route::resource('companies', \App\Http\Controllers\Admin\CompanyController::class);
     Route::resource('modules', \App\Http\Controllers\ModuleController::class)->except(['show']);
