@@ -21,9 +21,7 @@ export default function Index({ auth, politica, companies, users, currentCompany
     const userPermissions = auth.user?.permissions || [];
     const canManage = userPermissions.includes('manage-politica-qualidade');
 
-    const [isEditing, setIsEditing] = useState(
-        (politica.status === 'rascunho' || politica.status === 'devolvida') && canManage
-    );
+    const [isEditing, setIsEditing] = useState(!politica?.conteudo);
 
     const { data, setData, post, processing, errors } = useForm({
         conteudo: politica.conteudo || '',
@@ -64,8 +62,18 @@ export default function Index({ auth, politica, companies, users, currentCompany
         ],
     };
 
-    const handleAction = (route) => {
-        post(route, { preserveScroll: true });
+    const handleAction = (routeUrl) => {
+        post(routeUrl, { 
+            preserveScroll: true,
+            onSuccess: () => setIsEditing(false)
+        });
+    };
+
+    const handleDelete = () => {
+        if (confirm('Tem certeza que deseja excluir o conteúdo? Ele voltará para o status de Rascunho.')) {
+            setData('conteudo', '');
+            post(route('politica-qualidade.salvar-rascunho'), { preserveScroll: true });
+        }
     };
 
     return (
@@ -96,14 +104,14 @@ export default function Index({ auth, politica, companies, users, currentCompany
             <Head title="Política da Qualidade" />
 
             <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+                <div className="max-w-[95%] mx-auto sm:px-6 lg:px-8 space-y-6">
                     
                     {/* Header de Status */}
                     <div className="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg p-6 flex justify-between items-center">
                         <div>
                             <h3 className="text-lg font-medium text-slate-900 dark:text-white flex items-center gap-2">
                                 <FileSignature className="h-5 w-5 text-indigo-500" />
-                                Controle de Documento
+                                Status do Documento
                             </h3>
                             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Status atual do documento.</p>
                         </div>
@@ -174,11 +182,23 @@ export default function Index({ auth, politica, companies, users, currentCompany
                                         </div>
                                     </div>
 
-                                    <div className="flex justify-end pt-8">
+                                    <div className="flex justify-end pt-8 gap-2">
+                                        {politica?.conteudo && (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setData('conteudo', politica.conteudo);
+                                                    setIsEditing(false);
+                                                }}
+                                                className="inline-flex items-center px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-slate-50 transition"
+                                            >
+                                                Cancelar
+                                            </button>
+                                        )}
                                         <button
                                             onClick={() => handleAction(route('politica-qualidade.salvar-rascunho'))}
                                             disabled={processing}
-                                            className="inline-flex items-center px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 rounded-md font-semibold text-xs text-slate-700 dark:text-slate-300 uppercase tracking-widest shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150"
+                                            className="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 disabled:opacity-25 transition"
                                         >
                                             <Save className="h-4 w-4 mr-2" />
                                             Salvar Rascunho
@@ -186,7 +206,27 @@ export default function Index({ auth, politica, companies, users, currentCompany
                                     </div>
                                 </div>
                             ) : (
-                                <div className="prose max-w-none dark:prose-invert min-h-[500px]" dangerouslySetInnerHTML={{ __html: politica.conteudo || '<p class="text-slate-500">Nenhum conteúdo definido ainda.</p>' }} />
+                                <div className="space-y-4">
+                                    <div className="prose max-w-none dark:prose-invert min-h-[500px]" dangerouslySetInnerHTML={{ __html: politica.conteudo || '<p class="text-slate-500">Nenhum conteúdo definido ainda.</p>' }} />
+                                    
+                                    {canManage && (isRascunho || isAprovada) && (
+                                        <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-700">
+                                            <button
+                                                onClick={() => setIsEditing(true)}
+                                                className="inline-flex items-center px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 rounded-md font-semibold text-xs text-slate-700 dark:text-slate-300 uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+                                            >
+                                                Editar
+                                            </button>
+                                            <button
+                                                onClick={handleDelete}
+                                                disabled={processing}
+                                                className="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 disabled:opacity-25 transition"
+                                            >
+                                                Excluir
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             )}
                         </div>
 

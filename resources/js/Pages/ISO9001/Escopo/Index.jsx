@@ -96,14 +96,14 @@ export default function Index({ auth, escopo, companies, users, currentCompanyId
             <Head title="Escopo do SGI" />
 
             <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+                <div className="max-w-[95%] mx-auto sm:px-6 lg:px-8 space-y-6">
                     
                     {/* Header de Status */}
                     <div className="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg p-6 flex justify-between items-center">
                         <div>
                             <h3 className="text-lg font-medium text-slate-900 dark:text-white flex items-center gap-2">
                                 <FileSignature className="h-5 w-5 text-indigo-500" />
-                                Controle de Documento
+                                Status do Documento
                             </h3>
                             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Status atual do documento.</p>
                         </div>
