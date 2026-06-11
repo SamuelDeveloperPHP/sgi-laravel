@@ -17,31 +17,47 @@ import {
 } from 'lucide-react';
 import ApplicationLogo from '@/Components/ApplicationLogo';
 
+// Mapeamento estático para icones base do Lucide que estavam hardcoded
+const lucideIcons = {
+    LayoutDashboard,
+    FileCheck,
+    AlertTriangle,
+    Target,
+    Building,
+    Users,
+    Briefcase,
+    Award
+};
+
+// Componente para renderizar ícones dinamicamente (Lucide ou FontAwesome/Remix)
+const DynamicIcon = ({ iconName, className = "h-5 w-5 shrink-0" }) => {
+    if (!iconName) return <div className={className} />;
+    
+    // Se for string no padrão font awesome / remix icon
+    if (iconName.startsWith('fa-') || iconName.startsWith('fas ') || iconName.startsWith('ri-')) {
+        return <i className={`${iconName} ${className}`} aria-hidden="true"></i>;
+    }
+
+    // Se for um ícone do Lucide (mapeado)
+    const IconComponent = lucideIcons[iconName];
+    if (IconComponent) {
+        return <IconComponent className={className} aria-hidden="true" />;
+    }
+
+    // Fallback genérico se não achar o ícone
+    return <div className={`bg-gray-200 dark:bg-gray-700 rounded-sm ${className}`} />;
+};
+
 export default function Sidebar({ isOpen, setIsOpen, isDarkMode, toggleDarkMode }) {
-    const { auth } = usePage().props;
+    const { auth, navigation = [] } = usePage().props;
     const userPermissions = auth.user?.permissions || [];
 
     // Helper para verificar permissão
     const can = (permission) => {
         if (!permission) return true; // Se não exigir permissão, permite
+        if (auth.user?.is_master_admin) return true; // Master admin bypass
         return userPermissions.includes(permission);
     };
-
-    const navigation = [
-        { name: 'Dashboard', href: 'dashboard', icon: LayoutDashboard, permission: 'view-dashboard' },
-        { 
-            name: 'ISO 9001', 
-            icon: Award, 
-            children: [
-                { name: 'Auditorias', href: 'auditorias.index', permission: 'view-auditorias' },
-                { name: 'Não Conformidades', href: 'nao-conformidades.index', permission: 'view-naoconformidades' },
-                { name: 'Planos de Ação', href: 'planos-acao.index', permission: 'view-planosacao' },
-            ]
-        },
-        { name: 'Projetos', href: 'projetos.index', icon: Briefcase, permission: 'view-projetos' },
-        { name: 'Empresas', href: 'admin.companies.index', icon: Building, permission: 'view-companies' },
-        { name: 'Usuários', href: 'admin.users.index', icon: Users, permission: 'view-users' },
-    ];
 
     return (
         <>
@@ -69,7 +85,7 @@ export default function Sidebar({ isOpen, setIsOpen, isDarkMode, toggleDarkMode 
                 <nav className="flex flex-1 flex-col overflow-y-auto px-4 py-4 space-y-1 h-[calc(100vh-4rem-4rem)]">
                     {navigation.map((item) => {
                         // Se for um item com dropdown
-                        if (item.children) {
+                        if (item.children && item.children.length > 0) {
                             // Filtra apenas sub-itens que tem permissão
                             const allowedChildren = item.children.filter(child => can(child.permission));
                             
@@ -82,7 +98,7 @@ export default function Sidebar({ isOpen, setIsOpen, isDarkMode, toggleDarkMode 
                         // Se for um item simples
                         if (!can(item.permission)) return null;
 
-                        const isActive = route().current(item.href + '.*') || route().current(item.href);
+                        const isActive = item.href ? (route().current(item.href + '.*') || route().current(item.href)) : false;
                         
                         return (
                             <Link
@@ -95,8 +111,9 @@ export default function Sidebar({ isOpen, setIsOpen, isDarkMode, toggleDarkMode 
                                         : 'text-slate-700 hover:text-indigo-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-700'}
                                 `}
                             >
-                                <item.icon 
-                                    className={`h-5 w-5 shrink-0 transition-colors ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 group-hover:text-indigo-600 dark:text-slate-400 dark:group-hover:text-white'}`} 
+                                <DynamicIcon 
+                                    iconName={item.icon}
+                                    className={`mr-3 h-5 w-5 shrink-0 transition-colors duration-200 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 group-hover:text-indigo-600 dark:text-slate-400 dark:group-hover:text-white'}`} 
                                     aria-hidden="true" 
                                 />
                                 {item.name}
@@ -132,9 +149,10 @@ export default function Sidebar({ isOpen, setIsOpen, isDarkMode, toggleDarkMode 
 // Sub-componente para os menus dropdown
 function NavGroup({ item }) {
     // Checa se alguma rota dos filhos está ativa no momento
-    const isAnyChildActive = item.children.some(child => 
-        route().current(child.href + '.*') || route().current(child.href)
-    );
+    const isAnyChildActive = item.children.some(child => {
+        if (!child.href) return false;
+        return route().current(child.href + '.*') || route().current(child.href);
+    });
 
     // O menu começa aberto se uma das sub-rotas for a página atual
     const [isOpen, setIsOpen] = useState(isAnyChildActive);
@@ -156,8 +174,9 @@ function NavGroup({ item }) {
                 `}
             >
                 <div className="flex items-center gap-x-3">
-                    <item.icon 
-                        className={`h-5 w-5 shrink-0 transition-colors ${isAnyChildActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`} 
+                    <DynamicIcon 
+                        iconName={item.icon}
+                        className={`mr-3 h-5 w-5 shrink-0 transition-colors duration-200 ${isAnyChildActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`} 
                         aria-hidden="true" 
                     />
                     {item.name}
@@ -169,7 +188,7 @@ function NavGroup({ item }) {
             {isOpen && (
                 <div className="mt-1 space-y-1 pl-10 pr-2">
                     {item.children.map((child) => {
-                        const isChildActive = route().current(child.href + '.*') || route().current(child.href);
+                        const isChildActive = child.href ? (route().current(child.href + '.*') || route().current(child.href)) : false;
                         return (
                             <Link
                                 key={child.name}

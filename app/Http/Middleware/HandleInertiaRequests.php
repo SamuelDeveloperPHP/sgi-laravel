@@ -54,8 +54,51 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user'   => $this->buildUserPayload($user),
                 'tenant' => $this->buildTenantPayload($user),
+                'notifications' => $user ? $user->unreadNotifications()->take(5)->get() : []
             ],
+            'navigation' => $this->buildNavigation(),
+            'flash' => [
+                'success' => fn () => $request->session()->get('success'),
+                'error' => fn () => $request->session()->get('error'),
+                'warning' => fn () => $request->session()->get('warning'),
+            ]
         ];
+    }
+
+    /**
+     * Carrega a árvore de navegação do banco de dados (Modules).
+     */
+    protected function buildNavigation(): array
+    {
+        // Se usar schema builder, testamos se a tabela existe para evitar erros em novas instalações
+        if (!\Illuminate\Support\Facades\Schema::hasTable('modules')) {
+            return [];
+        }
+
+        $modules = \App\Models\Module::with('children')
+            ->whereNull('parent_id')
+            ->where('is_active', true)
+            ->where('is_visible_in_menu', true)
+            ->orderBy('order')
+            ->get();
+
+        return $modules->map(function ($mod) {
+            return [
+                'name' => $mod->name,
+                'href' => $mod->route_name,
+                'icon' => $mod->icon,
+                'permission' => $mod->slug,
+                'children' => $mod->children->where('is_active', true)
+                                            ->where('is_visible_in_menu', true)
+                                            ->map(function ($child) {
+                                                return [
+                                                    'name' => $child->name,
+                                                    'href' => $child->route_name,
+                                                    'permission' => $child->slug,
+                                                ];
+                                            })->values()->toArray(),
+            ];
+        })->toArray();
     }
 
     /**
