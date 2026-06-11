@@ -14,21 +14,63 @@ use Spatie\Permission\Models\Permission;
 
 class UserController extends Controller
 {
+    /**
+     * 5 roles canonicas que Administrador da empresa pode atribuir.
+     * Master Admin NAO esta nesta lista — e setado por seeder/comando.
+     * Ver memoria sgi-laravel-access-rules item 5.
+     */
+    private const ALLOWED_ROLES_FOR_ADMIN = [
+        'Administrador',
+        'Analista da Qualidade',
+        'Tecnico da Qualidade',
+        'Enfermeiros',
+        'Tecnicos de Enfermagem',
+    ];
+
     public function index(Request $request)
     {
+        $authUser = $request->user();
+        $isMaster = (bool) $authUser?->is_master_admin;
         $search = $request->input('search');
 
         $query = User::with('companies');
 
+        // Filtragem por empresa (memoria sgi-laravel-access-rules
+        // item 6): Administrador da empresa so ve usuarios da SUA
+        // empresa. Master admin ve TODOS os usuarios de TODAS as
+        // empresas.
+        if (!$isMaster) {
+            $companyId = $authUser->company_id;
+            $query->where(function ($q) use ($companyId) {
+                $q->where('company_id', $companyId)
+                  ->orWhereHas('companies', fn ($qq) => $qq->where('companies.id', $companyId));
+            });
+            // Esconde master admins da listagem para nao-master:
+            // master e papel transversal de sistema, nao gerenciavel
+            // pelos administradores de empresa.
+            $query->where('is_master_admin', false);
+        }
+
         if ($search) {
-            $query->where('name', 'like', "%{$search}%")
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%");
+            });
         }
 
         $users = $query->orderBy('name')->paginate(10)->withQueryString();
 
-        $masterCount = User::where('is_master_admin', true)->count();
-        $standardCount = User::where('is_master_admin', false)->count();
+        // Metricas tambem scoped por papel
+        if ($isMaster) {
+            $masterCount = User::where('is_master_admin', true)->count();
+            $standardCount = User::where('is_master_admin', false)->count();
+        } else {
+            $companyId = $authUser->company_id;
+            $masterCount = 0; // nao mostrado para non-master
+            $standardCount = User::where('is_master_admin', false)
+                ->where('company_id', $companyId)
+                ->count();
+        }
 
         return Inertia::render('Admin/Users/Index', [
             'users' => $users,
@@ -37,12 +79,15 @@ class UserController extends Controller
                 'master' => $masterCount,
                 'standard' => $standardCount,
                 'total' => $masterCount + $standardCount,
-            ]
+            ],
+            'isMasterAdmin' => $isMaster,
         ]);
     }
 
     private function getFormProps(User $user = null)
     {
+        $authUser = auth()->user();
+        $isMaster = (bool) $authUser?->is_master_admin;
         // Apenas verbos canonicos sao considerados "acoes" na matriz de
         // privilegios. Permissions que nao comecam com um deles (ex:
         // 'iso-9001' que e slug de modulo pai criado pelo ModuleSeeder,
@@ -85,12 +130,27 @@ class UserController extends Controller
             ];
         }
 
+        // Master admin: escolhe entre todas as roles + todas as empresas
+        // Administrador da empresa: roles limitadas as 5 + apenas SUA
+        // empresa nas opcoes
+        if ($isMaster) {
+            $availableRoles = Role::orderBy('name')->get();
+            $availableCompanies = Company::orderBy('nome_fantasia')->get(['id', 'nome_fantasia']);
+        } else {
+            $availableRoles = Role::whereIn('name', self::ALLOWED_ROLES_FOR_ADMIN)
+                ->orderBy('name')
+                ->get();
+            $availableCompanies = Company::where('id', $authUser->company_id)
+                ->get(['id', 'nome_fantasia']);
+        }
+
         return [
             'user' => $user ? $user->load('companies', 'permissions', 'roles') : new User(),
-            'companies' => Company::orderBy('nome_fantasia')->get(['id', 'nome_fantasia']),
-            'roles' => Role::all(),
+            'companies' => $availableCompanies,
+            'roles' => $availableRoles,
             'modules' => $modules,
-            'isEdit' => $user !== null
+            'isEdit' => $user !== null,
+            'isMasterAdmin' => $isMaster,
         ];
     }
 
@@ -101,64 +161,116 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
-            'password' => ['required', Rules\Password::defaults()],
+        $authUser = $request->user();
+        $isMaster = (bool) $authUser?->is_master_admin;
+
+        // Validacao base. Para non-master, restringe roles e
+        // companies aos valores permitidos.
+        $rules = [
+            'name'      => 'required|string|max:255',
+            'email'     => 'required|string|lowercase|email|max:255',
+            'password'  => ['required', Rules\Password::defaults()],
             'companies' => 'nullable|array',
-            'companies.*' => 'exists:companies,id',
             'is_active' => 'boolean',
-            'role' => 'nullable|string|exists:roles,name',
+            'role'      => 'nullable|string',
             'permissions' => 'nullable|array',
-            // Defesa em profundidade contra escalada de privilégio: bloqueia
-            // explicitamente o flag is_master_admin no body. A criação de
-            // master admins deve ser feita por seeder ou comando artisan,
-            // nunca via HTTP.
+            // Defesa em profundidade contra escalada de privilegio:
+            // bloqueia explicitamente is_master_admin no body. A
+            // criacao de master admins e via seeder/comando, nao HTTP.
             'is_master_admin' => 'prohibited',
-        ]);
+        ];
 
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'is_active' => $validated['is_active'] ?? true,
-        ]);
-
-        if (isset($validated['companies'])) {
-            $user->companies()->sync($validated['companies']);
+        if ($isMaster) {
+            // Master: pode escolher qualquer role e qualquer company
+            $rules['role'] = 'nullable|string|exists:roles,name';
+            $rules['companies.*'] = 'exists:companies,id';
+            // Email globalmente unico para master
+            $rules['email'] .= '|unique:users,email';
+        } else {
+            // Non-master: role obrigatoria, restrita as 5 do negocio
+            $allowedRoles = implode(',', self::ALLOWED_ROLES_FOR_ADMIN);
+            $rules['role'] = "required|string|in:{$allowedRoles}";
+            // Companies: aceita SO a do criador (ignora outros valores)
+            $rules['companies.*'] = 'in:' . $authUser->company_id;
+            // Email unique por empresa (composite UNIQUE no DB
+            // suporta isso; aqui validamos antes para mensagem amigavel)
+            $rules['email'] .= '|unique:users,email,NULL,id,company_id,' . $authUser->company_id;
         }
 
-        if (isset($validated['role'])) {
+        $validated = $request->validate($rules);
+
+        // company_id: master pode setar via body (futuro), non-master
+        // SEMPRE pega do seu proprio company_id (impede criar
+        // usuarios em outra empresa)
+        $companyId = $isMaster
+            ? ($validated['companies'][0] ?? $authUser->company_id)
+            : $authUser->company_id;
+
+        $user = User::create([
+            'name'      => $validated['name'],
+            'email'     => $validated['email'],
+            'password'  => Hash::make($validated['password']),
+            'is_active' => $validated['is_active'] ?? true,
+        ]);
+        // company_id nao esta no $fillable do User por seguranca —
+        // setado via forceFill (ver memoria sgi-laravel-multi-tenant)
+        $user->forceFill(['company_id' => $companyId])->save();
+
+        // Sincroniza pivot company_user (suporta futura troca de
+        // tenant). Para non-master a unica empresa permitida e a dele.
+        $user->companies()->sync([$companyId]);
+
+        if (isset($validated['role']) && $validated['role'] !== '') {
             $user->syncRoles([$validated['role']]);
         } else {
             $user->syncRoles([]);
         }
 
-        if (isset($validated['permissions'])) {
+        // Permissions granulares: master pode ajustar livremente;
+        // non-master nao mexe em permissions diretamente (a role ja
+        // determina). Ignora silenciosamente se enviado.
+        if ($isMaster && isset($validated['permissions'])) {
             $user->syncPermissions($validated['permissions']);
         }
 
-        return redirect()->route('admin.users.index')->with('message', 'Usuário criado com sucesso!');
+        return redirect()->route('admin.users.index')->with('success', 'Usuário criado com sucesso!');
     }
 
     public function edit(User $user)
     {
+        $this->authorizeManage($user);
         return Inertia::render('Admin/Users/Form', $this->getFormProps($user));
     }
 
     public function update(Request $request, User $user)
     {
+        $this->authorizeManage($user);
+
+        $authUser = $request->user();
+        $isMaster = (bool) $authUser?->is_master_admin;
+
         $rules = [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class.',email,'.$user->id,
+            'name'      => 'required|string|max:255',
+            'email'     => 'required|string|lowercase|email|max:255',
             'companies' => 'nullable|array',
-            'companies.*' => 'exists:companies,id',
             'is_active' => 'boolean',
-            'role' => 'nullable|string|exists:roles,name',
+            'role'      => 'nullable|string',
             'permissions' => 'nullable|array',
-            // Defesa em profundidade contra escalada de privilégio: ver store().
+            // Defesa em profundidade contra escalada de privilegio: ver store().
             'is_master_admin' => 'prohibited',
         ];
+
+        if ($isMaster) {
+            $rules['role'] = 'nullable|string|exists:roles,name';
+            $rules['companies.*'] = 'exists:companies,id';
+            $rules['email'] .= '|unique:users,email,' . $user->id;
+        } else {
+            $allowedRoles = implode(',', self::ALLOWED_ROLES_FOR_ADMIN);
+            $rules['role'] = "required|string|in:{$allowedRoles}";
+            $rules['companies.*'] = 'in:' . $authUser->company_id;
+            // Unique por empresa (excluindo o proprio user na edicao)
+            $rules['email'] .= '|unique:users,email,' . $user->id . ',id,company_id,' . $authUser->company_id;
+        }
 
         if ($request->filled('password')) {
             $rules['password'] = [Rules\Password::defaults()];
@@ -176,10 +288,13 @@ class UserController extends Controller
 
         $user->save();
 
-        if (isset($validated['companies'])) {
+        // Master admin pode trocar a empresa do usuario; non-master
+        // nao mexe (usuario continua na empresa dele)
+        if ($isMaster && isset($validated['companies'])) {
             $user->companies()->sync($validated['companies']);
-        } else {
-            $user->companies()->detach();
+            if (!empty($validated['companies'])) {
+                $user->forceFill(['company_id' => $validated['companies'][0]])->save();
+            }
         }
 
         if (isset($validated['role']) && $validated['role'] !== '') {
@@ -188,21 +303,55 @@ class UserController extends Controller
             $user->syncRoles([]);
         }
 
-        if (isset($validated['permissions'])) {
-            $user->syncPermissions($validated['permissions']);
-        } else {
-            $user->syncPermissions([]);
+        // Permissions granulares: so master ajusta diretamente
+        if ($isMaster) {
+            if (isset($validated['permissions'])) {
+                $user->syncPermissions($validated['permissions']);
+            } else {
+                $user->syncPermissions([]);
+            }
         }
 
-        return redirect()->route('admin.users.index')->with('message', 'Usuário atualizado com sucesso!');
+        return redirect()->route('admin.users.index')->with('success', 'Usuário atualizado com sucesso!');
     }
 
     public function destroy(User $user)
     {
+        $this->authorizeManage($user);
+
         if (auth()->id() === $user->id) {
             return back()->withErrors(['error' => 'Você não pode excluir a si mesmo.']);
         }
         $user->delete();
-        return redirect()->route('admin.users.index')->with('message', 'Usuário excluído com sucesso!');
+        return redirect()->route('admin.users.index')->with('success', 'Usuário excluído com sucesso!');
+    }
+
+    /**
+     * Verifica se o usuario autenticado pode gerenciar o $user alvo.
+     *
+     *   - Master admin: pode gerenciar qualquer usuario
+     *   - Administrador da empresa: pode gerenciar APENAS usuarios
+     *     da SUA empresa, e NUNCA pode mexer em master admins
+     *
+     * Aborta 403 caso violacao. Defesa em camadas: bloqueia mesmo
+     * que a UI deixe vazar uma URL/payload incorreta.
+     */
+    private function authorizeManage(User $user): void
+    {
+        $authUser = auth()->user();
+        if (!$authUser) {
+            abort(403);
+        }
+        if ($authUser->is_master_admin) {
+            return; // master admin sempre pode
+        }
+        // Non-master: nao pode mexer em master admin
+        if ($user->is_master_admin) {
+            abort(403, 'Você não pode gerenciar Administradores Master.');
+        }
+        // Non-master: alvo precisa ser da mesma empresa
+        if ($user->company_id !== $authUser->company_id) {
+            abort(403, 'Usuário pertence a outra empresa.');
+        }
     }
 }

@@ -157,14 +157,27 @@ Route::middleware(['auth', 'verified', 'company.required'])->group(function () {
     Route::post('fornecedores/{fornecedor}/avaliacoes', [\App\Http\Controllers\FornecedorAvaliacaoController::class, 'store'])->name('fornecedor.avaliacoes.store');
 });
 
-// Admin Routes (Master Admin Only)
-// Nao aplica 'company.required' porque CheckMasterAdmin ja garante
-// que so master admin chega aqui, e master admin nao precisa de
-// company_id (acesso global por design).
-Route::middleware(['auth', 'verified', \App\Http\Middleware\CheckMasterAdmin::class])->prefix('admin')->name('admin.')->group(function () {
+// Admin Routes — Master Admin Only:
+//   - Gerenciar todas as empresas (CRUD)
+//   - Gerenciar todos os modulos dinamicos (Module CRUD)
+// Estas rotas exigem CheckMasterAdmin. Nao aplica 'company.required'
+// porque master nao precisa de company_id por design.
+Route::middleware(['auth', 'verified', \App\Http\Middleware\CheckMasterAdmin::class])
+    ->prefix('admin')->name('admin.')->group(function () {
     Route::resource('companies', \App\Http\Controllers\Admin\CompanyController::class);
     Route::resource('modules', \App\Http\Controllers\ModuleController::class)->except(['show']);
+});
 
+// Admin/Users — acessivel para Administrador da empresa E master admin.
+// O proprio UserController:
+//   - Filtra lista por company_id quando non-master
+//   - Restringe roles atribuiveis as 5 do negocio
+//   - Bloqueia gestao de usuarios de outras empresas
+//   - Bloqueia gestao de master admins por non-master
+// Aplicacao do CheckMasterAdmin foi REMOVIDA aqui propositalmente
+// porque a regra de acesso e mais sutil (master vs admin da empresa).
+Route::middleware(['auth', 'verified', 'company.required'])
+    ->prefix('admin')->name('admin.')->group(function () {
     Route::resource('users', \App\Http\Controllers\Admin\UserController::class);
 });
 
