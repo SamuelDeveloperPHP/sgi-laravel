@@ -14,7 +14,13 @@ class Company extends Model
         'nome_fantasia',
         'razao_social',
         'cnpj',
+        'logo',
         'status',
+        'criterios_avaliacao_fornecedor',
+    ];
+
+    protected $casts = [
+        'criterios_avaliacao_fornecedor' => 'array',
     ];
 
     public function users()
