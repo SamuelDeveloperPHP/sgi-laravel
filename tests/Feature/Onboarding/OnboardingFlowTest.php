@@ -208,10 +208,11 @@ class OnboardingFlowTest extends SecurityTestCase
     }
 
     /** @test */
-    public function onboarding_atribui_role_administrador_da_empresa_se_existir(): void
+    public function onboarding_atribui_role_administrador_se_existir(): void
     {
-        // Garante que a role existe para esse teste
-        Role::firstOrCreate(['name' => 'Administrador da Empresa', 'guard_name' => 'web']);
+        // BusinessRolesSeeder cria a role 'Administrador' (sem o
+        // sufixo 'da Empresa'). Garantimos aqui para o teste.
+        Role::firstOrCreate(['name' => 'Administrador', 'guard_name' => 'web']);
 
         $user = $this->createVerifiedUser(['company_id' => null]);
         $this->actingAs($user);
@@ -223,7 +224,63 @@ class OnboardingFlowTest extends SecurityTestCase
         ]);
 
         $user->refresh();
-        $this->assertTrue($user->hasRole('Administrador da Empresa'));
+        $this->assertTrue($user->hasRole('Administrador'));
+    }
+
+    /** @test */
+    public function onboarding_salva_dados_completos_da_empresa(): void
+    {
+        $user = $this->createVerifiedUser(['company_id' => null]);
+        $this->actingAs($user);
+
+        $response = $this->post(route('onboarding.complete'), [
+            'nome_fantasia'     => 'Tech Solutions',
+            'razao_social'      => 'Tech Solutions LTDA',
+            'cnpj'              => '11222333000181',
+            'cep'               => '01310-100',
+            'logradouro'        => 'Av. Paulista',
+            'numero'            => '1000',
+            'complemento'       => 'Sala 200',
+            'bairro'            => 'Bela Vista',
+            'cidade'            => 'Sao Paulo',
+            'estado'            => 'SP',
+            'email_corporativo' => 'contato@techsolutions.com.br',
+            'telefone'          => '(11) 99999-9999',
+            'observacoes'       => 'Empresa de TI',
+        ]);
+
+        $response->assertRedirect(route('dashboard'));
+
+        $this->assertDatabaseHas('companies', [
+            'cnpj'                => '11222333000181',
+            'logradouro'          => 'Av. Paulista',
+            'numero'              => '1000',
+            'cidade'              => 'Sao Paulo',
+            'estado'              => 'SP',
+            'email_corporativo'   => 'contato@techsolutions.com.br',
+            'nome_administrador'  => $user->name,
+            'email_administrador' => $user->email,
+        ]);
+    }
+
+    /** @test */
+    public function onboarding_rejeita_mass_assignment_de_nome_administrador(): void
+    {
+        // Defesa em profundidade: o usuario nao pode injetar
+        // nome_administrador ou email_administrador via body.
+        // Sao setados pelo backend a partir do user autenticado.
+        $user = $this->createVerifiedUser(['company_id' => null]);
+        $this->actingAs($user);
+
+        $response = $this->post(route('onboarding.complete'), [
+            'nome_fantasia'       => 'Tentativa',
+            'razao_social'        => 'Hacker LTDA',
+            'cnpj'                => '11222333000181',
+            'nome_administrador'  => 'Outro Nome',
+            'email_administrador' => 'falso@example.com',
+        ]);
+
+        $response->assertSessionHasErrors(['nome_administrador', 'email_administrador']);
     }
 
     /** @test */
