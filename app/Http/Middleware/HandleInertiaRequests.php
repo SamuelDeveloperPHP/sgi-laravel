@@ -56,7 +56,7 @@ class HandleInertiaRequests extends Middleware
                 'tenant' => $this->buildTenantPayload($user),
                 'notifications' => $user ? $user->unreadNotifications()->take(5)->get() : []
             ],
-            'navigation' => $this->buildNavigation(),
+            'navigation' => $this->buildNavigation($user),
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
@@ -66,14 +66,33 @@ class HandleInertiaRequests extends Middleware
     }
 
     /**
-     * Carrega a árvore de navegação do banco de dados (Modules).
+     * Carrega a arvore de navegacao do banco (Modules).
+     *
+     * REGRA DE FILTRAGEM POR PAPEL (memoria sgi-laravel-access-rules):
+     *   - Master admin: ve TODOS os modulos
+     *   - Outros usuarios: ve tudo EXCETO os slugs em $masterOnlySlugs
+     *     (modulo Projetos e modulo de gerenciamento de Modulos)
+     *
+     * Tambem oculta itens cujo usuario nao tem permission Spatie
+     * correspondente (defesa em camadas — backend tambem bloqueia
+     * via Policies/middleware, mas nao mostra na UI o que ele nao
+     * pode usar).
      */
-    protected function buildNavigation(): array
+    protected function buildNavigation(?\App\Models\User $user = null): array
     {
-        // Se usar schema builder, testamos se a tabela existe para evitar erros em novas instalações
         if (!\Illuminate\Support\Facades\Schema::hasTable('modules')) {
             return [];
         }
+
+        $isMasterAdmin = $user?->is_master_admin === true;
+
+        // Slugs visiveis APENAS para master admin
+        $masterOnlySlugs = [
+            'view-projetos',
+            'manage-modules',
+            'manage-companies',
+            'iso-9001', // slug do modulo pai criado pelo ModuleSeeder
+        ];
 
         $modules = \App\Models\Module::with('children')
             ->whereNull('parent_id')
@@ -82,24 +101,50 @@ class HandleInertiaRequests extends Middleware
             ->orderBy('order')
             ->get();
 
-        return $modules->map(function ($mod) {
-            return [
-                'name' => $mod->name,
-                'href' => $mod->route_name,
-                'icon' => $mod->icon,
-                'permission' => $mod->slug,
-                'children' => $mod->children->where('is_active', true)
-                                            ->where('is_visible_in_menu', true)
-                                            ->map(function ($child) {
-                                                return [
-                                                    'name' => $child->name,
-                                                    'href' => $child->route_name,
-                                                    'permission' => $child->slug,
-                                                    'icon' => $child->icon,
-                                                ];
-                                            })->values()->toArray(),
-            ];
-        })->toArray();
+        return $modules
+            ->filter(function ($mod) use ($isMasterAdmin, $masterOnlySlugs) {
+                // Filtra modulos restritos a master admin
+                if (!$isMasterAdmin && in_array($mod->slug, $masterOnlySlugs, true)) {
+                    return false;
+                }
+                return true;
+            })
+            ->map(function ($mod) use ($user, $isMasterAdmin) {
+                return [
+                    'name' => $mod->name,
+                    'href' => $mod->route_name,
+                    'icon' => $mod->icon,
+                    'permission' => $mod->slug,
+                    'children' => $mod->children
+                        ->where('is_active', true)
+                        ->where('is_visible_in_menu', true)
+                        ->filter(function ($child) use ($user, $isMasterAdmin) {
+                            // Master admin ve todos os filhos
+                            if ($isMasterAdmin) {
+                                return true;
+                            }
+                            // Usuario sem login: sem filtro extra (so vai
+                            // chegar aqui se navigation for renderizado
+                            // em layout publico, o que nao deveria)
+                            if (!$user) {
+                                return true;
+                            }
+                            // Usuario logado: precisa ter a permission Spatie
+                            // que casa com o slug do modulo
+                            return $user->can($child->slug);
+                        })
+                        ->map(function ($child) {
+                            return [
+                                'name' => $child->name,
+                                'href' => $child->route_name,
+                                'permission' => $child->slug,
+                                'icon' => $child->icon,
+                            ];
+                        })->values()->toArray(),
+                ];
+            })
+            ->values()
+            ->toArray();
     }
 
     /**
