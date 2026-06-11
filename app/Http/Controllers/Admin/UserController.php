@@ -43,17 +43,38 @@ class UserController extends Controller
 
     private function getFormProps(User $user = null)
     {
-        $allPermissions = Permission::all()->groupBy(function($item) {
-            // Group permissions by module based on suffix (e.g. view-companies -> Companies)
-            $parts = explode('-', $item->name);
-            return isset($parts[1]) ? ucfirst($parts[1]) : 'Gerais';
-        });
+        // Apenas verbos canonicos sao considerados "acoes" na matriz de
+        // privilegios. Permissions que nao comecam com um deles (ex:
+        // 'iso-9001' que e slug de modulo pai criado pelo ModuleSeeder,
+        // nao uma acao granular) sao excluidas para nao distorcer o
+        // agrupamento. A gestao desses modulos pais e feita em
+        // /admin/modules, nao nesta matriz.
+        $actionVerbs = ['view', 'list', 'create', 'edit', 'delete', 'manage'];
+
+        $allPermissions = Permission::all()
+            ->filter(function ($item) use ($actionVerbs) {
+                $parts = explode('-', $item->name);
+                return isset($parts[1]) && in_array($parts[0], $actionVerbs, true);
+            })
+            ->groupBy(function ($item) {
+                // Reune tudo apos a acao como recurso. Ex:
+                //   'view-nossa-historia' -> 'Nossa-historia'
+                //   'manage-controle-documentos' -> 'Controle-documentos'
+                $parts = explode('-', $item->name);
+                $resource = implode('-', array_slice($parts, 1));
+                return ucfirst($resource);
+            });
 
         // Format permissions for matrix
         $modules = [];
         foreach($allPermissions as $moduleName => $perms) {
             $modules[] = [
-                'name' => $moduleName,
+                // CAST EXPLICITO PARA STRING: PHP arrays convertem
+                // strings numericas (ex: '9001') em INT automaticamente
+                // quando viram chaves. Sem este cast, mod.name no React
+                // virava number e .toLowerCase() quebrava. Mantemos o
+                // String() wrap no JSX como defesa em profundidade.
+                'name' => (string) $moduleName,
                 'permissions' => $perms->map(function($p) {
                     return [
                         'id' => $p->id,
