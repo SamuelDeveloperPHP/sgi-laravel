@@ -5,7 +5,8 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { Save, ArrowLeft } from 'lucide-react';
 import Select from 'react-select';
-
+import InputLabel from '@/Components/InputLabel';
+import InputError from '@/Components/InputError';
 export default function Form({ auth, objetivo, users, currentCompanyId }) {
     const isEdit = !!objetivo.id;
 
