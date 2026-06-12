@@ -42,11 +42,35 @@ export default function Form({ auth, user, companies, roles, modules, isEdit }) 
     };
 
     const togglePermission = (permName) => {
-        if (data.permissions.includes(permName)) {
-            setData('permissions', data.permissions.filter(p => p !== permName));
+        const parts = permName.split('-');
+        const action = parts[0];
+        const resource = parts.slice(1).join('-');
+        const listPerm = `list-${resource}`;
+
+        let newPermissions = [...data.permissions];
+
+        if (newPermissions.includes(permName)) {
+            // Desmarcando
+            newPermissions = newPermissions.filter(p => p !== permName);
+            
+            // Se estiver desmarcando o 'list', desmarca todas as outras ações daquele recurso
+            if (action === 'list') {
+                newPermissions = newPermissions.filter(p => {
+                    const pParts = p.split('-');
+                    return pParts.slice(1).join('-') !== resource;
+                });
+            }
         } else {
-            setData('permissions', [...data.permissions, permName]);
+            // Marcando
+            newPermissions.push(permName);
+            
+            // Se estiver marcando qualquer ação que não seja 'list', marca o 'list' automaticamente (pois ele libera o Sidebar)
+            if (action !== 'list' && !newPermissions.includes(listPerm)) {
+                newPermissions.push(listPerm);
+            }
         }
+
+        setData('permissions', newPermissions);
     };
 
     const [expandedModules, setExpandedModules] = useState({});

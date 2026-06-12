@@ -1,3 +1,35 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+    body {
+        font-size: 13px;
+        color: #73879C;
+    }
+}
+
+@layer components {
+  /* Gentelella x_panel base style */
+  .x_panel {
+    @apply relative w-full mb-3 p-3 sm:p-4 inline-block bg-white border border-[#E6E9ED] transition-all duration-200 ease-in-out opacity-100;
+  }
+  
+  /* Gentelella x_title style */
+  .x_title {
+    @apply border-b border-[#E6E9ED] p-1 sm:p-2 mb-3 flex justify-between items-center;
+  }
+
+  .x_title h2 {
+    @apply m-0 text-base font-normal float-left block truncate;
+  }
+
+  .x_title .nav.navbar-right.panel_toolbox {
+    @apply min-w-max float-right flex items-center m-0 p-0 list-none;
+  }
+
+  /* Gentelella x_content style */
+  .x_content {
+    @apply p-0 sm:p-1 md:p-2 relative w-full float-left clear-both mt-[5px];
+  }
+}

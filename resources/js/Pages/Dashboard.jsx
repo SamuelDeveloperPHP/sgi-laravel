@@ -28,7 +28,7 @@ export default function Dashboard({ auth, stats, recent_nc, recent_pa }) {
     return (
         <AuthenticatedLayout
             user={auth.user}
-            header={<h2 className="font-semibold text-xl text-slate-800 dark:text-slate-200 leading-tight">Dashboard SGI</h2>}
+            header={<h2 className="font-normal text-xl text-[#73879C] leading-tight">Dashboard SGI</h2>}
         >
             <Head title="Dashboard" />
 
@@ -36,46 +36,64 @@ export default function Dashboard({ auth, stats, recent_nc, recent_pa }) {
                 <div className="w-full sm:px-6 lg:px-8 space-y-6">
                     
                     {/* Welcome Banner */}
-                    <div className="bg-gradient-to-r from-indigo-600 to-blue-600 rounded-3xl p-8 shadow-glass text-white relative overflow-hidden">
+                    <div className="bg-gradient-to-r from-[#1ABB9C] to-[#26B99A] p-6 shadow-sm text-white relative overflow-hidden mb-6">
                         <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl"></div>
-                        <h3 className="text-3xl font-bold mb-2 tracking-tight">Bem-vindo(a) ao seu novo SGI, {auth.user.name}!</h3>
-                        <p className="text-indigo-100 text-lg opacity-90 font-medium">Aqui está o resumo atualizado do seu sistema de gestão de qualidade e segurança.</p>
+                        <h3 className="text-2xl font-normal mb-1">Bem-vindo(a) ao seu novo SGI, {auth.user.name}!</h3>
+                        <p className="text-white text-sm opacity-90">Aqui está o resumo atualizado do seu sistema de gestão de qualidade e segurança.</p>
                     </div>
 
                     {/* KPIs */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl rounded-3xl p-6 shadow-soft border border-white/50 dark:border-slate-700/50 hover:shadow-glass hover:-translate-y-1 transition-all duration-300">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total de Não Conformidades</p>
-                                    <h4 className="text-3xl font-bold text-slate-900 dark:text-white mt-2">{stats.total_nc}</h4>
+                        <div className="x_panel">
+                            <div className="x_content">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <p className="text-sm font-medium text-[#73879C]">Total de Não Conformidades</p>
+                                        <h3 className="text-3xl font-bold text-slate-800 dark:text-white mt-2">{stats.total_nc}</h3>
+                                    </div>
+                                    <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-2xl">
+                                        <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" />
+                                    </div>
                                 </div>
-                                <div className="p-3 bg-rose-50 dark:bg-rose-500/10 rounded-lg">
-                                    <AlertTriangle className="w-6 h-6 text-rose-500" />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl rounded-3xl p-6 shadow-soft border border-white/50 dark:border-slate-700/50 hover:shadow-glass hover:-translate-y-1 transition-all duration-300">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Planos de Ação Abertos</p>
-                                    <h4 className="text-3xl font-bold text-slate-900 dark:text-white mt-2">{stats.total_pa}</h4>
-                                </div>
-                                <div className="p-3 bg-blue-50 dark:bg-blue-500/10 rounded-lg">
-                                    <Activity className="w-6 h-6 text-blue-500" />
+                                <div className="mt-4 flex items-center text-sm">
+                                    <span className="text-red-500 flex items-center font-medium"><TrendingUp className="h-4 w-4 mr-1"/> {stats.nc_abertas} Abertas</span>
+                                    <span className="text-[#73879C] ml-2">vs último mês</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl rounded-3xl p-6 shadow-soft border border-white/50 dark:border-slate-700/50 hover:shadow-glass hover:-translate-y-1 transition-all duration-300">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Auditorias Internas</p>
-                                    <h4 className="text-3xl font-bold text-slate-900 dark:text-white mt-2">{stats.total_auditorias}</h4>
+                        <div className="x_panel">
+                            <div className="x_content">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <p className="text-sm font-medium text-[#73879C]">Planos de Ação Abertos</p>
+                                        <h3 className="text-3xl font-bold text-slate-800 dark:text-white mt-2">{stats.total_pa}</h3>
+                                    </div>
+                                    <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-2xl">
+                                        <Activity className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                                    </div>
                                 </div>
-                                <div className="p-3 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg">
-                                    <FileCheck2 className="w-6 h-6 text-emerald-500" />
+                                <div className="mt-4 flex items-center text-sm">
+                                    <span className="text-[#73879C] flex items-center font-medium">Acompanhamento</span>
+                                    <span className="text-[#73879C] ml-2">contínuo</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="x_panel">
+                            <div className="x_content">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <p className="text-sm font-medium text-[#73879C]">Auditorias Internas</p>
+                                        <h3 className="text-3xl font-bold text-slate-800 dark:text-white mt-2">{stats.total_auditorias}</h3>
+                                    </div>
+                                    <div className="p-3 bg-emerald-100 dark:bg-emerald-900/30 rounded-2xl">
+                                        <FileCheck2 className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                                    </div>
+                                </div>
+                                <div className="mt-4 flex items-center text-sm">
+                                    <span className="text-emerald-500 flex items-center font-medium">Em dia</span>
+                                    <span className="text-[#73879C] ml-2">neste ciclo</span>
                                 </div>
                             </div>
                         </div>
@@ -83,59 +101,65 @@ export default function Dashboard({ auth, stats, recent_nc, recent_pa }) {
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         {/* Gráfico */}
-                        <div className="lg:col-span-2 bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl rounded-3xl shadow-soft border border-white/50 dark:border-slate-700/50 p-6 transition-all duration-300 hover:shadow-glass">
-                            <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Volume de Registros</h3>
-                                <TrendingUp className="w-5 h-5 text-slate-400" />
+                        <div className="lg:col-span-2 x_panel">
+                            <div className="x_title">
+                                <h2>Volume de Registros</h2>
+                                <div className="clearfix"></div>
                             </div>
-                            <div className="h-[300px] w-full">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" opacity={0.2} />
-                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
-                                        <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
-                                        <Tooltip 
-                                            cursor={{fill: '#f1f5f9', opacity: 0.1}}
-                                            contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
-                                        />
-                                        <Bar dataKey="total" radius={[4, 4, 0, 0]} barSize={40} />
-                                    </BarChart>
-                                </ResponsiveContainer>
+                            <div className="x_content">
+                                <div className="h-[300px] w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E6E9ED" />
+                                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#73879C', fontSize: 12}} />
+                                            <YAxis axisLine={false} tickLine={false} tick={{fill: '#73879C', fontSize: 12}} />
+                                            <Tooltip 
+                                                cursor={{fill: '#f1f5f9', opacity: 0.1}}
+                                                contentStyle={{borderRadius: '0px', border: '1px solid #E6E9ED', boxShadow: 'none'}}
+                                            />
+                                            <Bar dataKey="total" fill="#26B99A" barSize={40} />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
                             </div>
                         </div>
 
                         {/* Atividades Recentes */}
-                        <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl rounded-3xl shadow-soft border border-white/50 dark:border-slate-700/50 p-6 transition-all duration-300 hover:shadow-glass">
-                            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-6">Últimas Não Conformidades</h3>
-                            <div className="space-y-4">
-                                {recent_nc.length > 0 ? recent_nc.map((nc) => (
-                                    <div key={nc.id} className="group flex items-start gap-4 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer">
-                                        <div className="w-2 h-2 mt-2 rounded-full bg-rose-500 shrink-0"></div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{nc.descricao}</p>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{nc.setor} • {nc.data}</p>
-                                        </div>
-                                        <ChevronRight className="w-4 h-4 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                    </div>
-                                )) : (
-                                    <p className="text-sm text-slate-500">Nenhum registro encontrado.</p>
-                                )}
+                        <div className="x_panel">
+                            <div className="x_title">
+                                <h2>Últimas Atividades</h2>
+                                <div className="clearfix"></div>
                             </div>
-                            
-                            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mt-8 mb-6">Planos de Ação Recentes</h3>
-                            <div className="space-y-4">
-                                {recent_pa.length > 0 ? recent_pa.map((pa) => (
-                                    <div key={pa.id} className="group flex items-start gap-4 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer">
-                                        <div className="w-2 h-2 mt-2 rounded-full bg-blue-500 shrink-0"></div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{pa.descricao}</p>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Prazo: {pa.prazo} • {pa.status}</p>
+                            <div className="x_content">
+                                <div className="space-y-4">
+                                    <h4 className="text-[#73879C] font-semibold mb-2">Não Conformidades</h4>
+                                    {recent_nc.length > 0 ? recent_nc.map((nc) => (
+                                        <div key={nc.id} className="group flex items-start gap-4 p-2 border-b border-[#E6E9ED] last:border-0 hover:bg-slate-50 transition-colors cursor-pointer">
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-[13px] font-bold text-[#73879C] truncate">{nc.descricao}</p>
+                                                <p className="text-xs text-[#73879C] mt-1">{nc.setor} • {nc.data}</p>
+                                            </div>
+                                            <ChevronRight className="w-4 h-4 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                                         </div>
-                                        <ChevronRight className="w-4 h-4 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                    </div>
-                                )) : (
-                                    <p className="text-sm text-slate-500">Nenhum plano encontrado.</p>
-                                )}
+                                    )) : (
+                                        <p className="text-sm text-slate-500">Nenhum registro encontrado.</p>
+                                    )}
+                                </div>
+                                
+                                <div className="space-y-4 mt-6">
+                                    <h4 className="text-[#73879C] font-semibold mb-2">Planos de Ação</h4>
+                                    {recent_pa.length > 0 ? recent_pa.map((pa) => (
+                                        <div key={pa.id} className="group flex items-start gap-4 p-2 border-b border-[#E6E9ED] last:border-0 hover:bg-slate-50 transition-colors cursor-pointer">
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-[13px] font-bold text-[#73879C] truncate">{pa.descricao}</p>
+                                                <p className="text-xs text-[#73879C] mt-1">Prazo: {pa.prazo} • {pa.status}</p>
+                                            </div>
+                                            <ChevronRight className="w-4 h-4 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        </div>
+                                    )) : (
+                                        <p className="text-sm text-slate-500">Nenhum plano encontrado.</p>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>

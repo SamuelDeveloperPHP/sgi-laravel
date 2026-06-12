@@ -70,13 +70,7 @@ export default function AuthenticatedLayout({ header, children, fullWidth = fals
     const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-300 relative font-sans text-slate-900 dark:text-slate-100">
-            {/* Ambient Background Blobs */}
-            <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-                <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-indigo-300/20 dark:bg-indigo-900/20 blur-[120px] mix-blend-multiply dark:mix-blend-screen" />
-                <div className="absolute top-[40%] -right-[10%] w-[40%] h-[60%] rounded-full bg-blue-300/20 dark:bg-blue-900/20 blur-[120px] mix-blend-multiply dark:mix-blend-screen" />
-            </div>
-
+        <div className="min-h-screen bg-gentelella-bg dark:bg-slate-900 transition-colors duration-300 relative font-sans text-[#73879C] dark:text-slate-300">
             <div className="relative z-10 flex min-h-screen">
                 {/* Sidebar */}
                 <Sidebar 
@@ -90,10 +84,10 @@ export default function AuthenticatedLayout({ header, children, fullWidth = fals
                 <div className="flex-1 flex flex-col min-w-0 lg:pl-64">
                     
                     {/* Top Header */}
-                    <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-white/40 dark:border-slate-700/40 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8 print:hidden transition-all duration-300">
+                    <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gentelella-border dark:border-slate-700 bg-white dark:bg-slate-800 px-4 shadow-none sm:gap-x-6 sm:px-6 lg:px-8 print:hidden transition-all duration-300">
                     <button
                         type="button"
-                        className="-m-2.5 p-2.5 text-gray-700 lg:hidden dark:text-gray-200"
+                        className="-m-2.5 p-2.5 text-[#73879C] lg:hidden dark:text-gray-200"
                         onClick={() => setSidebarOpen(true)}
                     >
                         <span className="sr-only">Abrir sidebar</span>
@@ -189,8 +183,8 @@ export default function AuthenticatedLayout({ header, children, fullWidth = fals
 
                 {/* Page Header (Breadcrumbs/Title) */}
                 {header && (
-                    <div className="bg-white/40 dark:bg-slate-800/40 backdrop-blur-md border-b border-white/50 dark:border-slate-700/50 print:hidden">
-                        <div className="w-full px-4 py-4 sm:px-6 lg:px-8">
+                    <div className="bg-transparent print:hidden pt-4">
+                        <div className="w-full px-4 sm:px-6 lg:px-8">
                             {header}
                         </div>
                     </div>

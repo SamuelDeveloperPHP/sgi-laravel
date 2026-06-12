@@ -14,25 +14,37 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Inter', ...defaultTheme.fontFamily.sans],
+                sans: ['"Helvetica Neue"', 'Roboto', 'Arial', '"Droid Sans"', 'sans-serif'],
             },
             colors: {
+                // Paleta TEAL calibrada em torno de #1ABB9C (Gentelella v4 brand).
+                // Manteve-se o nome 'indigo' para nao precisar refatorar 218
+                // ocorrencias em 40 arquivos JSX — apenas os valores HEX foram
+                // trocados. Para reverter o sistema todo para azul, basta restaurar
+                // o bloco anterior deste mesmo arquivo (git log).
                 indigo: {
-                    50: '#eff6ff',
-                    100: '#dbeafe',
-                    200: '#bfdbfe',
-                    300: '#93c5fd',
-                    400: '#60a5fa',
-                    500: '#3b82f6', // More of a clear blue-indigo
-                    600: '#2563eb',
-                    700: '#1d4ed8',
-                    800: '#1e40af',
-                    900: '#1e3a8a',
-                    950: '#172554',
+                    50:  '#E6F8F4',
+                    100: '#C9F0E5',
+                    200: '#94E2CC',
+                    300: '#5DCAA5',
+                    400: '#3CC4A8',
+                    500: '#1ABB9C', // primary (Gentelella --primary)
+                    600: '#169F85', // dark/hover  (Gentelella --primary-dk)
+                    700: '#128270',
+                    800: '#0F6E56',
+                    900: '#0A4E3F',
+                    950: '#052F26',
                 },
                 slate: {
                     850: '#151e2e',
                     900: '#0f172a',
+                },
+                gentelella: {
+                    sidebar: '#2A3F54',
+                    sidebarHover: '#233446',
+                    bg: '#F7F7F7',
+                    border: '#E6E9ED',
+                    text: '#73879C'
                 }
             },
             boxShadow: {
