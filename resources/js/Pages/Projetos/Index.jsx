@@ -37,25 +37,27 @@ export default function Index({ projetos }) {
         >
             <Head title="Projetos" />
 
-            <div className="mb-6 flex justify-between items-center">
-                <div className="flex-1 min-w-0">
-                    <h2 className="text-2xl font-bold leading-7 text-gray-900 dark:text-white sm:truncate sm:text-3xl sm:tracking-tight">
-                        Gestão de Projetos
-                    </h2>
-                    <p className="text-sm text-gray-500 mt-1">Acompanhe e gerencie todos os projetos da sua organização.</p>
-                </div>
-                <div className="mt-4 flex md:ml-4 md:mt-0">
-                    <Link
-                        href={route('projetos.create')}
-                        className="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                    >
-                        <Plus className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-                        Criar Projeto
-                    </Link>
-                </div>
-            </div>
+            <div className="py-12">
+                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                    <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div className="flex-1 min-w-0">
+                            <h2 className="text-2xl font-bold leading-7 text-gray-900 dark:text-white sm:truncate sm:text-3xl sm:tracking-tight">
+                                Gestão de Projetos
+                            </h2>
+                            <p className="text-sm text-gray-500 mt-1">Acompanhe e gerencie todos os projetos da sua organização.</p>
+                        </div>
+                        <div className="flex">
+                            <Link
+                                href={route('projetos.create')}
+                                className="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                            >
+                                <Plus className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+                                Criar Projeto
+                            </Link>
+                        </div>
+                    </div>
 
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {projetos.map((projeto) => (
                     <div key={projeto.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] border border-gray-100 dark:border-gray-700/50 flex flex-col transition-all hover:-translate-y-1 hover:shadow-lg">
                         <div className="p-5 flex-1 relative">
@@ -154,6 +156,8 @@ export default function Index({ projetos }) {
                         </Link>
                     </div>
                 )}
+            </div>
+            </div>
             </div>
         </AuthenticatedLayout>
     );
