@@ -103,14 +103,14 @@ export default function Sidebar({ isOpen, setIsOpen, isDarkMode, toggleDarkMode 
                         const isActive = item.href ? (route().current(item.href + '.*') || route().current(item.href)) : false;
                         
                         return (
-                            <div className="px-3 mb-1" key={item.name}>
+                            <div className="" key={item.name}>
                                 <Link
                                     href={route(item.href)}
                                     className={`
-                                        group flex items-center gap-x-3 px-3 py-2.5 text-sm leading-6 font-medium transition-all duration-200 rounded-lg border
+                                        group flex items-center gap-x-3 p-3 text-sm leading-6 font-medium transition-all duration-200 border-l-[4px]
                                         ${isActive 
-                                            ? 'border-[#1ABB9C] text-[#1ABB9C]' 
-                                            : 'border-transparent text-[#E7E7E7] hover:border-[#1ABB9C] hover:text-[#1ABB9C]'}
+                                            ? 'border-[#1ABB9C] bg-gentelella-sidebarHover text-white shadow-[inset_-5px_0_10px_rgba(0,0,0,0.1)]' 
+                                            : 'border-transparent text-[#E7E7E7] hover:border-transparent hover:bg-gentelella-sidebarHover hover:text-[#1ABB9C]'}
                                     `}
                                 >
                                     <DynamicIcon 
@@ -163,14 +163,14 @@ function NavGroup({ item }) {
     const highlighted = isAnyChildActive || isOpen;
 
     return (
-        <div className="mb-1 px-3">
+        <div className="">
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className={`
-                    group w-full flex items-center justify-between gap-x-3 px-3 py-2.5 text-sm leading-6 font-medium transition-all duration-200 rounded-lg border
+                    group w-full flex items-center justify-between gap-x-3 p-3 text-sm leading-6 font-medium transition-all duration-200 border-l-[4px]
                     ${highlighted
-                        ? 'border-[#1ABB9C] text-[#1ABB9C]'
-                        : 'border-transparent text-[#E7E7E7] hover:border-[#1ABB9C] hover:text-[#1ABB9C]'
+                        ? 'border-[#1ABB9C] bg-gentelella-sidebarHover text-white shadow-[inset_-5px_0_10px_rgba(0,0,0,0.1)]'
+                        : 'border-transparent text-[#E7E7E7] hover:border-transparent hover:bg-gentelella-sidebarHover hover:text-[#1ABB9C]'
                     }
                 `}
             >
