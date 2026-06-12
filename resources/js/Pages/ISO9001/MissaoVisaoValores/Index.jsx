@@ -19,7 +19,7 @@ import dayjs from 'dayjs';
 
 export default function Index({ auth, mvv, companies, users, currentCompanyId }) {
     const userPermissions = auth.user?.permissions || [];
-    const canManage = userPermissions.includes('manage-missao-visao-valores');
+    const canManage = auth.user?.is_master_admin || userPermissions.includes('manage-missao-visao-valores');
 
     const [isEditing, setIsEditing] = useState(!mvv?.conteudo);
 

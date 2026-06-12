@@ -51,7 +51,7 @@ export default function Index({ auth, atas, companies, currentCompanyId }) {
                         <div className="p-6">
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Registros de Atas</h3>
-                                {auth.user.permissions?.includes('manage-atas-reuniao') && (
+                                { (auth.user?.is_master_admin || auth.user.permissions?.includes('manage-atas-reuniao')) && (
                                     <Link
                                         href={route('atas-reuniao.create', { company_id: currentCompanyId })}
                                         className="flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition"
@@ -122,7 +122,7 @@ export default function Index({ auth, atas, companies, currentCompanyId }) {
                                                                 <FileText className="w-5 h-5" />
                                                             </a>
 
-                                                            {auth.user.permissions?.includes('manage-atas-reuniao') && (
+                                                            { (auth.user?.is_master_admin || auth.user.permissions?.includes('manage-atas-reuniao')) && (
                                                                 <button onClick={() => handleDelete(ata.id)} className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300" title="Excluir">
                                                                     <Trash2 className="w-5 h-5" />
                                                                 </button>
