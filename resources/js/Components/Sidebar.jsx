@@ -103,23 +103,24 @@ export default function Sidebar({ isOpen, setIsOpen, isDarkMode, toggleDarkMode 
                         const isActive = item.href ? (route().current(item.href + '.*') || route().current(item.href)) : false;
                         
                         return (
-                            <Link
-                                key={item.name}
-                                href={route(item.href)}
-                                className={`
-                                    group flex items-center gap-x-3 p-3 text-sm leading-6 font-medium transition-all duration-200 border-l-[4px]
-                                    ${isActive 
-                                        ? 'bg-gentelella-sidebarHover text-white border-indigo-500 shadow-[inset_-5px_0_10px_rgba(0,0,0,0.1)]' 
-                                        : 'text-[#E7E7E7] border-transparent hover:border-transparent hover:bg-gentelella-sidebarHover hover:text-white'}
-                                `}
-                            >
-                                <DynamicIcon 
-                                    iconName={item.icon}
-                                    className={`mr-3 h-5 w-5 shrink-0 transition-colors duration-200 ${isActive ? 'text-white' : 'text-[#E7E7E7] group-hover:text-white'}`} 
-                                    aria-hidden="true" 
-                                />
-                                {item.name}
-                            </Link>
+                            <div className="px-3 mb-1" key={item.name}>
+                                <Link
+                                    href={route(item.href)}
+                                    className={`
+                                        group flex items-center gap-x-3 px-3 py-2.5 text-sm leading-6 font-medium transition-all duration-200 rounded-lg border
+                                        ${isActive 
+                                            ? 'border-[#1ABB9C] text-[#1ABB9C]' 
+                                            : 'border-transparent text-[#E7E7E7] hover:border-[#1ABB9C] hover:text-[#1ABB9C]'}
+                                    `}
+                                >
+                                    <DynamicIcon 
+                                        iconName={item.icon}
+                                        className={`h-5 w-5 shrink-0 transition-colors duration-200 ${isActive ? 'text-[#1ABB9C]' : 'text-[#E7E7E7] group-hover:text-[#1ABB9C]'}`} 
+                                        aria-hidden="true" 
+                                    />
+                                    {item.name}
+                                </Link>
+                            </div>
                         );
                     })}
                 </nav>
@@ -162,22 +163,21 @@ function NavGroup({ item }) {
     const highlighted = isAnyChildActive || isOpen;
 
     return (
-        <div className="space-y-0">
+        <div className="mb-1 px-3">
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className={`
-                    group w-full flex items-center justify-between gap-x-3 p-3 text-sm leading-6 font-medium transition-all duration-200
-                    border-l-[4px]
+                    group w-full flex items-center justify-between gap-x-3 px-3 py-2.5 text-sm leading-6 font-medium transition-all duration-200 rounded-lg border
                     ${highlighted
-                        ? 'border-indigo-500 bg-gentelella-sidebarHover text-white shadow-[inset_-5px_0_10px_rgba(0,0,0,0.1)]'
-                        : 'border-transparent text-[#E7E7E7] hover:border-transparent hover:bg-gentelella-sidebarHover hover:text-white'
+                        ? 'border-[#1ABB9C] text-[#1ABB9C]'
+                        : 'border-transparent text-[#E7E7E7] hover:border-[#1ABB9C] hover:text-[#1ABB9C]'
                     }
                 `}
             >
                 <div className="flex items-center gap-x-3">
                     <DynamicIcon
                         iconName={item.icon}
-                        className={`mr-3 h-5 w-5 shrink-0 transition-colors duration-200 ${highlighted ? 'text-white' : 'text-[#E7E7E7] group-hover:text-white'}`}
+                        className={`h-5 w-5 shrink-0 transition-colors duration-200 ${highlighted ? 'text-[#1ABB9C]' : 'text-[#E7E7E7] group-hover:text-[#1ABB9C]'}`}
                         aria-hidden="true"
                     />
                     {item.name}
@@ -187,25 +187,27 @@ function NavGroup({ item }) {
 
             {/* Sub-itens expandidos com estilo de lista do Gentelella */}
             {isOpen && (
-                <div className="bg-gentelella-sidebarHover/50 py-2 space-y-0">
+                <ul className="relative ml-7 mt-1 mb-2 space-y-1 before:absolute before:left-0 before:top-0 before:bottom-4 before:w-px before:bg-[#E7E7E7]/30">
                     {item.children.map((child) => {
                         const isChildActive = child.href ? (route().current(child.href + '.*') || route().current(child.href)) : false;
                         return (
-                            <Link
-                                key={child.name}
-                                href={route(child.href)}
-                                className={`
-                                    flex items-center gap-x-3 pl-11 pr-3 py-2 text-sm font-medium transition-all duration-200
-                                    ${isChildActive
-                                        ? 'text-white font-bold opacity-100'
-                                        : 'text-[#E7E7E7]/80 hover:text-white hover:opacity-100'}
-                                `}
-                            >
-                                {child.name}
-                            </Link>
+                            <li key={child.name} className="relative">
+                                <Link
+                                    href={route(child.href)}
+                                    className={`
+                                        flex items-center gap-x-3 pl-6 pr-3 py-1.5 text-[13px] font-medium transition-all duration-200 relative
+                                        before:absolute before:left-0 before:top-1/2 before:-mt-px before:w-3 before:h-px before:bg-[#E7E7E7]/30
+                                        ${isChildActive
+                                            ? 'text-white font-bold'
+                                            : 'text-[#E7E7E7]/70 hover:text-white'}
+                                    `}
+                                >
+                                    {child.name}
+                                </Link>
+                            </li>
                         );
                     })}
-                </div>
+                </ul>
             )}
         </div>
     );
