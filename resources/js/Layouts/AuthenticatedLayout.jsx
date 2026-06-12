@@ -97,6 +97,13 @@ export default function AuthenticatedLayout({ header, children, fullWidth = fals
                     {/* Separator for mobile */}
                     <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 lg:hidden" aria-hidden="true" />
 
+                    {/* Page Header (Breadcrumbs/Title) in Navbar */}
+                    {header && (
+                        <div className="flex items-center">
+                            {header}
+                        </div>
+                    )}
+
                     <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6 justify-end">
                         <div className="flex items-center gap-x-4 lg:gap-x-6">
                             
@@ -180,15 +187,6 @@ export default function AuthenticatedLayout({ header, children, fullWidth = fals
                         </div>
                     </div>
                 </header>
-
-                {/* Page Header (Breadcrumbs/Title) */}
-                {header && (
-                    <div className="bg-transparent print:hidden pt-4">
-                        <div className="w-full px-4 sm:px-6 lg:px-8">
-                            {header}
-                        </div>
-                    </div>
-                )}
 
                 {/* Main Content */}
                 <main className="flex-1 animate-fade-in">

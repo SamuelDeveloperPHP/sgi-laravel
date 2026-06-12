@@ -32,7 +32,7 @@ export default function Dashboard({ auth, stats, recent_nc, recent_pa }) {
         >
             <Head title="Dashboard" />
 
-            <div className="py-12">
+            <div className="pt-6 pb-12">
                 <div className="w-full sm:px-6 lg:px-8 space-y-6">
                     
                     {/* Welcome Banner */}

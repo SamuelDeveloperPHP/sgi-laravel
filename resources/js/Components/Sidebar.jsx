@@ -13,7 +13,8 @@ import {
     Briefcase,
     ChevronDown,
     ChevronRight,
-    Award
+    Award,
+    Blocks
 } from 'lucide-react';
 import ApplicationLogo from '@/Components/ApplicationLogo';
 
@@ -26,7 +27,8 @@ const lucideIcons = {
     Building,
     Users,
     Briefcase,
-    Award
+    Award,
+    Blocks
 };
 
 // Componente para renderizar ícones dinamicamente (Lucide ou FontAwesome/Remix)
