@@ -1,6 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { ArrowLeft, Plus, Trash2, Edit2, GripHorizontal, MoreHorizontal, Clock, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Search, MoreHorizontal } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import TextInput from '@/Components/TextInput';
@@ -25,6 +25,10 @@ export default function Show({ projeto }) {
     const [editingColId, setEditingColId] = useState(null);
     const [editColName, setEditColName] = useState('');
     const [selectedTask, setSelectedTask] = useState(null);
+    
+    // State to track which column is showing the "Add Task" input
+    const [addingTaskColId, setAddingTaskColId] = useState(null);
+    const [newTaskNames, setNewTaskNames] = useState({});
 
     const handleAddColumn = (e) => {
         e.preventDefault();
@@ -53,8 +57,6 @@ export default function Show({ projeto }) {
         }
         setEditingColId(null);
     };
-
-    const [newTaskNames, setNewTaskNames] = useState({});
     
     const handleAddTask = (e, colId) => {
         e.preventDefault();
@@ -69,6 +71,7 @@ export default function Show({ projeto }) {
             preserveScroll: true,
             onSuccess: () => {
                 setNewTaskNames(prev => ({...prev, [colId]: ''}));
+                setAddingTaskColId(null);
             }
         });
     };
@@ -144,46 +147,77 @@ export default function Show({ projeto }) {
         }
     };
 
-    // Gera uma prioridade fake baseada no ID para efeito visual (High, Medium, Low)
-    const getFakePriority = (id) => {
-        if (id % 3 === 0) return { label: 'High', class: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' };
-        if (id % 2 === 0) return { label: 'Medium', class: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' };
-        return { label: 'Low', class: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' };
+    const getColumnDotColor = (index) => {
+        const colors = [
+            'bg-gray-400',    // 0 To do
+            'bg-blue-500',    // 1 In progress
+            'bg-amber-500',   // 2 Review
+            'bg-emerald-500', // 3 Done
+            'bg-purple-500',  // 4
+        ];
+        return colors[index % colors.length];
+    };
+
+    const getFakeTags = (id) => {
+        const tags = [];
+        if (id % 5 === 0) tags.push({ label: 'GERÊNCIA', class: 'text-emerald-600 bg-emerald-50 border-emerald-100' });
+        else if (id % 2 === 0) tags.push({ label: 'DEV', class: 'text-blue-600 bg-blue-50 border-blue-100' });
+        else if (id % 3 === 0) tags.push({ label: 'DESIGN', class: 'text-purple-600 bg-purple-50 border-purple-100' });
+        else if (id % 7 === 0) tags.push({ label: 'DOCS', class: 'text-amber-600 bg-amber-50 border-amber-100' });
+        else tags.push({ label: 'ERRO', class: 'text-red-600 bg-red-50 border-red-100' });
+        
+        if (id % 4 === 0 && tags.length < 2) tags.push({ label: 'DEV', class: 'text-blue-600 bg-blue-50 border-blue-100' });
+        
+        return tags;
     };
 
     return (
         <AuthenticatedLayout
-            header={<h2 className="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Board: {projeto.nomeProjeto}</h2>}
+            header={null} // Removemos o header padrão para criar o customizado
             fullWidth={true}
         >
             <Head title={`Board: ${projeto.nomeProjeto}`} />
 
-            <div className="h-[calc(100vh-130px)] flex flex-col bg-[#f3f6f9] dark:bg-gray-900">
-                <div className="flex-none px-6 py-4 flex justify-between items-center bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 z-10">
-                    <div>
-                        <div className="flex items-center gap-3">
-                            <Link href={route('projetos.index')} className="text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">
-                                <ArrowLeft className="w-5 h-5" />
-                            </Link>
-                            <h1 className="text-xl font-bold text-gray-900 dark:text-white leading-none">{projeto.nomeProjeto}</h1>
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400">Kanban Board</span>
+            <div className="h-screen flex flex-col bg-[#f5f7fb] dark:bg-gray-900 font-sans">
+                {/* Gentelella Style Header */}
+                <div className="flex-none px-6 py-4 flex justify-between items-center bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 z-10">
+                    <div className="flex flex-col">
+                        <span className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold mb-0.5">Módulos</span>
+                        <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">Quadro Kanban</h1>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                        <div className="relative hidden sm:block">
+                            <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                            <input 
+                                type="text" 
+                                placeholder="Filtrar cartões..." 
+                                className="pl-9 pr-4 py-1.5 text-sm bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md focus:ring-0 focus:border-gray-300 w-60 text-gray-700 dark:text-gray-200 placeholder-gray-400"
+                            />
                         </div>
+                        <button className="px-3 py-1.5 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 text-sm font-medium rounded-md hover:bg-gray-50 dark:hover:bg-gray-800">
+                            Filtros
+                        </button>
+                        <button className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium rounded-md flex items-center gap-1 shadow-sm transition-colors">
+                            <Plus className="w-4 h-4" /> Novo cartão
+                        </button>
                     </div>
                 </div>
 
                 {errors.message && (
-                    <div className="mx-6 mt-4 p-3 rounded-md bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-400 flex items-center gap-2 border border-red-200 dark:border-red-800">
+                    <div className="mx-6 mt-4 p-3 rounded-md bg-red-50 text-red-800 flex items-center gap-2 border border-red-200">
                         <AlertCircle className="w-5 h-5" />
                         <span className="text-sm font-medium">{errors.message}</span>
                     </div>
                 )}
 
-                <div className="flex-1 overflow-x-auto overflow-y-hidden p-6">
+                <div className="flex-1 overflow-x-auto overflow-y-hidden p-6 bg-[#f5f7fb] dark:bg-gray-900">
                     <DragDropContext onDragEnd={onDragEnd}>
                         <Droppable droppableId="board" type="column" direction="horizontal">
                             {(provided) => (
                                 <div 
-                                    className="flex h-full items-start gap-6"
+                                    className="grid items-start gap-4 h-full"
+                                    style={{ gridTemplateColumns: 'repeat(4, minmax(260px, 1fr))' }}
                                     ref={provided.innerRef}
                                     {...provided.droppableProps}
                                 >
@@ -193,17 +227,17 @@ export default function Show({ projeto }) {
                                                 <div
                                                     ref={provided.innerRef}
                                                     {...provided.draggableProps}
-                                                    className={`flex-none w-[320px] max-h-full flex flex-col bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg shadow-sm border border-gray-200/50 dark:border-gray-700/50 transition-all ${snapshot.isDragging ? 'opacity-90 ring-2 ring-indigo-500 scale-[1.02]' : ''}`}
+                                                    className="w-full max-h-full flex flex-col bg-gray-50/30 dark:bg-gray-800/30 rounded-xl shadow-[0_2px_20px_-4px_rgba(0,0,0,0.04)] border border-gray-200/30 p-2 transition-all hover:bg-gray-50/50"
                                                 >
                                                     {/* Column Header */}
                                                     <div 
                                                         {...provided.dragHandleProps}
-                                                        className="px-4 py-3.5 flex items-center justify-between group cursor-grab active:cursor-grabbing"
+                                                        className="py-1 mb-3 flex items-center justify-between group cursor-grab active:cursor-grabbing px-1"
                                                     >
                                                         {editingColId === col.id ? (
                                                             <TextInput 
                                                                 autoFocus
-                                                                className="h-8 text-sm px-2 w-full font-semibold bg-white dark:bg-gray-900"
+                                                                className="h-8 text-sm px-2 w-full font-semibold"
                                                                 value={editColName}
                                                                 onChange={e => setEditColName(e.target.value)}
                                                                 onBlur={() => saveEditColumn(col)}
@@ -211,24 +245,32 @@ export default function Show({ projeto }) {
                                                             />
                                                         ) : (
                                                             <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                                <div className={`w-2 h-2 rounded-full ${getColumnDotColor(index)}`}></div>
                                                                 <h3 
-                                                                    className="text-[15px] font-semibold text-gray-800 dark:text-gray-100 cursor-text truncate hover:text-indigo-600 transition-colors"
+                                                                    className="text-[15px] font-bold text-gray-800 dark:text-gray-100 cursor-text hover:text-gray-600"
                                                                     onClick={() => { setEditingColId(col.id); setEditColName(col.nome); }}
                                                                 >
                                                                     {col.nome}
                                                                 </h3>
-                                                                <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-300 shadow-sm border border-gray-200 dark:border-gray-600">
+                                                                <span className="text-[13px] text-gray-400 font-medium ml-1">
                                                                     {col.tarefas.length}
                                                                 </span>
                                                             </div>
                                                         )}
-                                                        <button 
-                                                            onClick={() => handleDeleteColumn(col.id)}
-                                                            className="text-gray-400 hover:text-red-500 p-1 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ml-2 opacity-0 group-hover:opacity-100"
-                                                            title="Excluir Coluna"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
+                                                        <div className="flex items-center gap-1">
+                                                            <button 
+                                                                onClick={() => setAddingTaskColId(col.id)}
+                                                                className="text-gray-400 hover:text-gray-600 transition-colors"
+                                                            >
+                                                                <Plus className="w-4 h-4" />
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => handleDeleteColumn(col.id)}
+                                                                className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
                                                     </div>
 
                                                     {/* Droppable Tasks Area */}
@@ -237,10 +279,10 @@ export default function Show({ projeto }) {
                                                             <div 
                                                                 ref={provided.innerRef}
                                                                 {...provided.droppableProps}
-                                                                className={`flex-1 overflow-y-auto px-3 pb-3 space-y-3 min-h-[150px] transition-colors rounded-b-lg ${snapshot.isDraggingOver ? 'bg-gray-200/50 dark:bg-gray-700/30' : ''}`}
+                                                                className={`flex-1 overflow-y-auto space-y-3 min-h-[50px] pb-2 ${snapshot.isDraggingOver ? 'bg-gray-100 rounded-lg' : ''}`}
                                                             >
                                                                 {col.tarefas.map((tarefa, tIndex) => {
-                                                                    const priority = getFakePriority(tarefa.id);
+                                                                    const tags = getFakeTags(tarefa.id);
                                                                     return (
                                                                     <Draggable key={tarefa.id.toString()} draggableId={`task-${tarefa.id}`} index={tIndex}>
                                                                         {(provided, snapshot) => (
@@ -249,36 +291,48 @@ export default function Show({ projeto }) {
                                                                                 {...provided.draggableProps}
                                                                                 {...provided.dragHandleProps}
                                                                                 onClick={() => setSelectedTask(tarefa)}
-                                                                                className={`bg-white dark:bg-gray-800 p-3.5 rounded-md shadow-[0_1px_3px_rgba(0,0,0,0.1)] border border-gray-200/60 dark:border-gray-700 group cursor-grab active:cursor-grabbing hover:border-indigo-300 dark:hover:border-indigo-500 transition-all ${snapshot.isDragging ? 'shadow-xl rotate-2 ring-2 ring-indigo-500 z-50' : 'hover:-translate-y-0.5 hover:shadow-md'}`}
+                                                                                className={`bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm group cursor-grab active:cursor-grabbing hover:border-gray-300 transition-all ${snapshot.isDragging ? 'shadow-xl rotate-2 ring-1 ring-gray-300 z-50' : ''}`}
                                                                             >
-                                                                                <div className="flex justify-between items-start mb-2">
-                                                                                    <span className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-900 px-1.5 py-0.5 rounded">
-                                                                                        #VLZ-{tarefa.id.toString().padStart(3, '0')}
-                                                                                    </span>
-                                                                                    <div className="flex items-center gap-2">
-                                                                                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${priority.class}`}>
-                                                                                            {priority.label}
+                                                                                {/* Tags */}
+                                                                                <div className="flex flex-wrap gap-1.5 mb-3">
+                                                                                    {tags.map((tag, i) => (
+                                                                                        <span key={i} className={`text-[10px] px-1.5 py-[2px] rounded border font-bold uppercase tracking-wide ${tag.class}`}>
+                                                                                            {tag.label}
                                                                                         </span>
-                                                                                        <button 
-                                                                                            onClick={() => handleDeleteTask(tarefa.id)}
-                                                                                            className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                                                        >
-                                                                                            <Trash2 className="w-3.5 h-3.5" />
-                                                                                        </button>
-                                                                                    </div>
+                                                                                    ))}
                                                                                 </div>
                                                                                 
-                                                                                <p className="text-[14px] text-gray-800 dark:text-gray-200 leading-snug font-medium mb-3">
+                                                                                <h4 className="text-[14px] text-gray-800 dark:text-gray-100 font-semibold leading-snug mb-1 pr-4 relative">
                                                                                     {tarefa.nome}
+                                                                                    <button 
+                                                                                        onClick={(e) => { e.stopPropagation(); handleDeleteTask(tarefa.id); }}
+                                                                                        className="absolute right-0 top-0 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                                    >
+                                                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                                                    </button>
+                                                                                </h4>
+
+                                                                                {/* Fake Description */}
+                                                                                <p className="text-[13px] text-gray-500 dark:text-gray-400 leading-snug mb-4 line-clamp-2">
+                                                                                    {tarefa.descricao || "A descrição detalhada vai aqui para o usuário ler."}
                                                                                 </p>
 
-                                                                                <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-100 dark:border-gray-700/50">
-                                                                                    <div className="flex items-center text-gray-400 text-xs gap-1">
-                                                                                        <Clock className="w-3.5 h-3.5" />
-                                                                                        <span>22 Dec</span>
+                                                                                <div className="flex items-center justify-between mt-auto">
+                                                                                    <div className={`flex items-center ${tarefa.id % 2 === 0 ? 'text-red-500' : 'text-gray-500'} font-medium text-[12px] gap-1`}>
+                                                                                        <span className="font-bold">M</span> 
+                                                                                        <span>30 Abr</span>
                                                                                     </div>
-                                                                                    <div className="flex -space-x-1.5">
-                                                                                        <img className="inline-block h-6 w-6 rounded-full ring-2 ring-white dark:ring-gray-800" src={`https://ui-avatars.com/api/?name=User+${tarefa.id}&background=random&color=fff&size=24`} alt="Avatar"/>
+                                                                                    
+                                                                                    {/* Avatar */}
+                                                                                    <div className="flex -space-x-1">
+                                                                                        <div className={`flex items-center justify-center w-6 h-6 rounded-full text-white text-[10px] font-bold ring-2 ring-white ${tarefa.id % 2 === 0 ? 'bg-purple-500' : 'bg-amber-500'}`}>
+                                                                                            {tarefa.nome.substring(0, 2).toUpperCase()}
+                                                                                        </div>
+                                                                                        {tarefa.id % 3 === 0 && (
+                                                                                            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-500 text-white text-[10px] font-bold ring-2 ring-white">
+                                                                                                TH
+                                                                                            </div>
+                                                                                        )}
                                                                                     </div>
                                                                                 </div>
                                                                             </div>
@@ -286,29 +340,48 @@ export default function Show({ projeto }) {
                                                                     </Draggable>
                                                                 )})}
                                                                 {provided.placeholder}
+                                                                
+                                                                {/* Add Task Input / Button */}
+                                                                <div className="pt-1">
+                                                                    {addingTaskColId === col.id ? (
+                                                                        <form onSubmit={(e) => handleAddTask(e, col.id)} className="flex flex-col gap-2 p-2 bg-white rounded-lg border border-gray-200 shadow-sm">
+                                                                            <TextInput
+                                                                                autoFocus
+                                                                                type="text"
+                                                                                className="w-full text-sm h-9 border-none focus:ring-0 px-2"
+                                                                                placeholder="Título da tarefa..."
+                                                                                value={newTaskNames[col.id] || ''}
+                                                                                onChange={e => setNewTaskNames(prev => ({...prev, [col.id]: e.target.value}))}
+                                                                            />
+                                                                            <div className="flex justify-end gap-1 border-t border-gray-100 pt-2">
+                                                                                 <button 
+                                                                                    type="button"
+                                                                                    onClick={() => setAddingTaskColId(null)}
+                                                                                    className="px-2 py-1 text-xs text-gray-500 hover:bg-gray-100 rounded"
+                                                                                >
+                                                                                    Cancelar
+                                                                                </button>
+                                                                                <button 
+                                                                                    type="submit"
+                                                                                    disabled={!newTaskNames[col.id]?.trim()}
+                                                                                    className="px-3 py-1 bg-emerald-500 hover:bg-emerald-600 text-white disabled:opacity-50 text-xs font-medium rounded transition-colors"
+                                                                                >
+                                                                                    Adicionar
+                                                                                </button>
+                                                                            </div>
+                                                                        </form>
+                                                                    ) : (
+                                                                        <button 
+                                                                            onClick={() => setAddingTaskColId(col.id)}
+                                                                            className="text-[13px] text-gray-400 hover:text-gray-800 text-left py-1 w-full pl-1 transition-colors"
+                                                                        >
+                                                                            + Adicionar cartão
+                                                                        </button>
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                         )}
                                                     </Droppable>
-
-                                                    {/* Add Task Input */}
-                                                    <div className="p-3 bg-white/50 dark:bg-gray-800/50 rounded-b-lg border-t border-gray-200/60 dark:border-gray-700/50 mt-auto">
-                                                        <form onSubmit={(e) => handleAddTask(e, col.id)} className="flex gap-2">
-                                                            <TextInput
-                                                                type="text"
-                                                                className="flex-1 text-sm h-9 bg-white dark:bg-gray-900 shadow-sm"
-                                                                placeholder="Adicionar tarefa..."
-                                                                value={newTaskNames[col.id] || ''}
-                                                                onChange={e => setNewTaskNames(prev => ({...prev, [col.id]: e.target.value}))}
-                                                            />
-                                                            <button 
-                                                                type="submit"
-                                                                disabled={!newTaskNames[col.id]?.trim()}
-                                                                className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 dark:text-indigo-400 disabled:opacity-50 text-sm font-medium rounded-md transition-colors"
-                                                            >
-                                                                <Plus className="w-4 h-4" />
-                                                            </button>
-                                                        </form>
-                                                    </div>
                                                 </div>
                                             )}
                                         </Draggable>
@@ -316,14 +389,14 @@ export default function Show({ projeto }) {
                                     {provided.placeholder}
 
                                     {/* Add Column Button */}
-                                    {columns.length < 6 && (
-                                        <div className="flex-none w-[320px] h-fit">
+                                    {columns.length < 10 && (
+                                        <div className="w-full h-fit mt-2">
                                             {addingCol ? (
-                                                <form onSubmit={handleAddColumn} className="bg-white dark:bg-gray-800 p-3.5 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                                                <form onSubmit={handleAddColumn} className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
                                                     <TextInput
                                                         autoFocus
-                                                        className="w-full text-sm mb-3"
-                                                        placeholder="Nome da lista..."
+                                                        className="w-full text-sm mb-2"
+                                                        placeholder="Nome da coluna..."
                                                         value={newColName}
                                                         onChange={e => setNewColName(e.target.value)}
                                                     />
@@ -331,19 +404,21 @@ export default function Show({ projeto }) {
                                                         <button 
                                                             type="button" 
                                                             onClick={() => { setAddingCol(false); setNewColName(''); }}
-                                                            className="px-3 py-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                                                            className="px-2 py-1 text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors"
                                                         >
                                                             Cancelar
                                                         </button>
-                                                        <PrimaryButton disabled={!newColName.trim()} className="py-1.5 text-xs">Adicionar Lista</PrimaryButton>
+                                                        <button type="submit" disabled={!newColName.trim()} className="px-3 py-1 bg-emerald-500 text-white rounded text-xs">
+                                                            Adicionar
+                                                        </button>
                                                     </div>
                                                 </form>
                                             ) : (
                                                 <button 
                                                     onClick={() => setAddingCol(true)}
-                                                    className="w-full py-3.5 px-4 flex items-center justify-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-100/50 dark:bg-gray-800/50 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg border border-dashed border-gray-300 dark:border-gray-600 transition-all"
+                                                    className="text-[13px] text-gray-400 hover:text-gray-800 text-left py-1 w-full pl-1 transition-colors"
                                                 >
-                                                    <Plus className="w-4 h-4" /> Adicionar nova lista
+                                                    + Adicionar coluna
                                                 </button>
                                             )}
                                         </div>
