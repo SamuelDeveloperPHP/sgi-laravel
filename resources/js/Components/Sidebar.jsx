@@ -68,21 +68,21 @@ export default function Sidebar({ isOpen, setIsOpen, isDarkMode, toggleDarkMode 
             />
 
             {/* Sidebar container */}
-            <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl border-r border-slate-200/50 dark:border-slate-700/50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-gentelella-sidebar border-r border-slate-800 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 
                 {/* Logo area */}
-                <div className="flex h-16 shrink-0 items-center justify-between px-6 border-b border-slate-200/50 dark:border-slate-700/50">
+                <div className="flex h-16 shrink-0 items-center justify-between px-6 border-b border-white/10">
                     <Link href="/" className="flex items-center gap-2 group">
-                        <ApplicationLogo className="block h-8 w-auto fill-current text-indigo-600 dark:text-indigo-400 transition-transform group-hover:scale-105" />
-                        <span className="font-bold text-xl text-slate-900 dark:text-white tracking-tight">Meusgi</span>
+                        <ApplicationLogo className="block h-8 w-auto fill-current text-white transition-transform group-hover:scale-105" />
+                        <span className="font-bold text-xl text-[#ECF0F1] tracking-tight">Meusgi</span>
                     </Link>
-                    <button onClick={() => setIsOpen(false)} className="lg:hidden text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+                    <button onClick={() => setIsOpen(false)} className="lg:hidden text-slate-400 hover:text-white">
                         <X className="h-6 w-6" />
                     </button>
                 </div>
 
                 {/* Navigation Links */}
-                <nav className="flex flex-1 flex-col overflow-y-auto px-4 py-4 space-y-1 h-[calc(100vh-4rem-4rem)]">
+                <nav className="flex flex-1 flex-col overflow-y-auto space-y-1 h-[calc(100vh-4rem-4rem)]">
                     {navigation.map((item) => {
                         // Se for um item com dropdown
                         if (item.children && item.children.length > 0) {
@@ -105,15 +105,15 @@ export default function Sidebar({ isOpen, setIsOpen, isDarkMode, toggleDarkMode 
                                 key={item.name}
                                 href={route(item.href)}
                                 className={`
-                                    group flex items-center gap-x-3 rounded-lg p-2 text-sm leading-6 font-medium transition-all duration-200
+                                    group flex items-center gap-x-3 p-3 text-sm leading-6 font-medium transition-all duration-200 border-l-[4px]
                                     ${isActive 
-                                        ? 'bg-indigo-50/80 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300 shadow-sm' 
-                                        : 'text-slate-600 hover:text-indigo-600 hover:bg-slate-50/80 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800/50'}
+                                        ? 'bg-gentelella-sidebarHover text-white border-indigo-500 shadow-[inset_-5px_0_10px_rgba(0,0,0,0.1)]' 
+                                        : 'text-[#E7E7E7] border-transparent hover:border-transparent hover:bg-gentelella-sidebarHover hover:text-white'}
                                 `}
                             >
                                 <DynamicIcon 
                                     iconName={item.icon}
-                                    className={`mr-3 h-5 w-5 shrink-0 transition-colors duration-200 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 group-hover:text-indigo-600 dark:text-slate-400 dark:group-hover:text-white'}`} 
+                                    className={`mr-3 h-5 w-5 shrink-0 transition-colors duration-200 ${isActive ? 'text-white' : 'text-[#E7E7E7] group-hover:text-white'}`} 
                                     aria-hidden="true" 
                                 />
                                 {item.name}
@@ -123,21 +123,15 @@ export default function Sidebar({ isOpen, setIsOpen, isDarkMode, toggleDarkMode 
                 </nav>
 
                 {/* Footer (Theme Toggle) */}
-                <div className="absolute bottom-0 w-full p-4 border-t border-slate-200/50 dark:border-slate-700/50 bg-white/50 dark:bg-slate-900/50 backdrop-blur-md">
+                <div className="absolute bottom-0 w-full p-4 bg-gentelella-sidebarHover border-t border-white/5">
                     <button
                         onClick={toggleDarkMode}
-                        className="flex w-full items-center gap-x-3 rounded-lg p-2 text-sm leading-6 font-medium text-slate-600 hover:bg-slate-100/80 dark:text-slate-300 dark:hover:bg-slate-800/80 transition-all duration-200"
+                        className="flex w-full items-center justify-center gap-x-3 rounded-lg p-2 text-sm leading-6 font-medium text-[#E7E7E7] hover:text-white transition-all duration-200"
                     >
                         {isDarkMode ? (
-                            <>
-                                <Sun className="h-5 w-5 text-amber-500" />
-                                Tema Claro
-                            </>
+                            <><Sun className="h-5 w-5 text-amber-500" /></>
                         ) : (
-                            <>
-                                <Moon className="h-5 w-5 text-indigo-500" />
-                                Tema Escuro
-                            </>
+                            <><Moon className="h-5 w-5 text-indigo-400" /></>
                         )}
                     </button>
                 </div>
@@ -147,6 +141,7 @@ export default function Sidebar({ isOpen, setIsOpen, isDarkMode, toggleDarkMode 
 }
 
 // Sub-componente para os menus dropdown
+// Visual no padrao Gentelella v4
 function NavGroup({ item }) {
     // Checa se alguma rota dos filhos está ativa no momento
     const isAnyChildActive = item.children.some(child => {
@@ -162,31 +157,35 @@ function NavGroup({ item }) {
         if (isAnyChildActive) setIsOpen(true);
     }, [isAnyChildActive]);
 
+    const highlighted = isAnyChildActive || isOpen;
+
     return (
-        <div className="space-y-1">
+        <div className="space-y-0">
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className={`
-                    w-full flex items-center justify-between gap-x-3 rounded-lg p-2 text-sm leading-6 font-medium transition-all duration-200
-                    ${isAnyChildActive 
-                        ? 'text-indigo-700 dark:text-indigo-400' 
-                        : 'text-slate-600 hover:text-indigo-600 hover:bg-slate-50/80 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800/50'}
+                    group w-full flex items-center justify-between gap-x-3 p-3 text-sm leading-6 font-medium transition-all duration-200
+                    border-l-[4px]
+                    ${highlighted
+                        ? 'border-indigo-500 bg-gentelella-sidebarHover text-white shadow-[inset_-5px_0_10px_rgba(0,0,0,0.1)]'
+                        : 'border-transparent text-[#E7E7E7] hover:border-transparent hover:bg-gentelella-sidebarHover hover:text-white'
+                    }
                 `}
             >
                 <div className="flex items-center gap-x-3">
-                    <DynamicIcon 
+                    <DynamicIcon
                         iconName={item.icon}
-                        className={`mr-3 h-5 w-5 shrink-0 transition-colors duration-200 ${isAnyChildActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`} 
-                        aria-hidden="true" 
+                        className={`mr-3 h-5 w-5 shrink-0 transition-colors duration-200 ${highlighted ? 'text-white' : 'text-[#E7E7E7] group-hover:text-white'}`}
+                        aria-hidden="true"
                     />
                     {item.name}
                 </div>
                 {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
             </button>
 
-            {/* Sub-itens expandidos */}
+            {/* Sub-itens expandidos com estilo de lista do Gentelella */}
             {isOpen && (
-                <div className="mt-1 space-y-1 pl-10 pr-2">
+                <div className="bg-gentelella-sidebarHover/50 py-2 space-y-0">
                     {item.children.map((child) => {
                         const isChildActive = child.href ? (route().current(child.href + '.*') || route().current(child.href)) : false;
                         return (
@@ -194,18 +193,12 @@ function NavGroup({ item }) {
                                 key={child.name}
                                 href={route(child.href)}
                                 className={`
-                                    flex items-center gap-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200
-                                    ${isChildActive 
-                                        ? 'bg-indigo-50/80 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300 shadow-sm' 
-                                        : 'text-slate-500 hover:text-indigo-600 hover:bg-slate-50/80 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/50'}
+                                    flex items-center gap-x-3 pl-11 pr-3 py-2 text-sm font-medium transition-all duration-200
+                                    ${isChildActive
+                                        ? 'text-white font-bold opacity-100'
+                                        : 'text-[#E7E7E7]/80 hover:text-white hover:opacity-100'}
                                 `}
                             >
-                                {child.icon && (
-                                    <DynamicIcon 
-                                        iconName={child.icon} 
-                                        className={`h-4 w-4 shrink-0 transition-colors duration-200 ${isChildActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-white'}`} 
-                                    />
-                                )}
                                 {child.name}
                             </Link>
                         );
