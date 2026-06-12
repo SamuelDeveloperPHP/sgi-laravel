@@ -19,7 +19,7 @@ import dayjs from 'dayjs';
 
 export default function Index({ auth, politica, companies, users, currentCompanyId }) {
     const userPermissions = auth.user?.permissions || [];
-    const canManage = userPermissions.includes('manage-politica-qualidade');
+    const canManage = auth.user?.is_master_admin || userPermissions.includes('manage-politica-qualidade');
 
     const [isEditing, setIsEditing] = useState(!politica?.conteudo);
 

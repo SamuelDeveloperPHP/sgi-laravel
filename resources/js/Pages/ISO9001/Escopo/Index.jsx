@@ -19,7 +19,7 @@ import dayjs from 'dayjs';
 
 export default function Index({ auth, escopo, companies, users, currentCompanyId }) {
     const userPermissions = auth.user?.permissions || [];
-    const canManage = userPermissions.includes('manage-escopo');
+    const canManage = auth.user?.is_master_admin || userPermissions.includes('manage-escopo');
 
     const [isEditing, setIsEditing] = useState(
         (escopo.status === 'rascunho' || escopo.status === 'devolvida') && canManage

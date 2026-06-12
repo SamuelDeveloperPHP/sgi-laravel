@@ -7,7 +7,7 @@ import { Save, History } from 'lucide-react';
 
 export default function Index({ auth, historia, companies, currentCompanyId }) {
     const userPermissions = auth.user?.permissions || [];
-    const canManage = userPermissions.includes('manage-nossa-historia');
+    const canManage = auth.user?.is_master_admin || userPermissions.includes('manage-nossa-historia');
 
     const [isEditing, setIsEditing] = useState(!historia?.conteudo);
 

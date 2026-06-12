@@ -6,7 +6,7 @@ import dayjs from 'dayjs';
 
 export default function Index({ auth, objetivos, companies, currentCompanyId }) {
     const userPermissions = auth.user?.permissions || [];
-    const canManage = userPermissions.includes('manage-objetivos-qualidade');
+    const canManage = auth.user?.is_master_admin || userPermissions.includes('manage-objetivos-qualidade');
 
     const getStatusBadge = (status) => {
         const badges = {

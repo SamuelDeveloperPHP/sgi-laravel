@@ -7,7 +7,7 @@ import RevisoesModal from './RevisoesModal';
 
 export default function Index({ auth, documentos, companies, currentCompanyId, users }) {
     const userPermissions = auth.user?.permissions || [];
-    const canManage = userPermissions.includes('manage-controle-documentos');
+    const canManage = auth.user?.is_master_admin || userPermissions.includes('manage-controle-documentos');
 
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
