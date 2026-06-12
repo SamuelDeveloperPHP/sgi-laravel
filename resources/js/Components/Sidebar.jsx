@@ -14,7 +14,8 @@ import {
     ChevronDown,
     ChevronRight,
     Award,
-    Blocks
+    Blocks,
+    Plus
 } from 'lucide-react';
 import ApplicationLogo from '@/Components/ApplicationLogo';
 
@@ -190,12 +191,15 @@ function NavGroup({ item }) {
                 <ul className="relative ml-7 mt-1 mb-2 space-y-1 before:absolute before:left-0 before:top-0 before:bottom-4 before:w-px before:bg-[#E7E7E7]/30">
                     {item.children.map((child) => {
                         const isChildActive = child.href ? (route().current(child.href + '.*') || route().current(child.href)) : false;
+                        const createRoute = child.href ? child.href.replace('.index', '.create') : null;
+                        const hasCreateRoute = createRoute && route().has(createRoute);
+
                         return (
-                            <li key={child.name} className="relative">
+                            <li key={child.name} className="relative group/child flex items-center justify-between">
                                 <Link
                                     href={route(child.href)}
                                     className={`
-                                        flex items-center gap-x-3 pl-6 pr-3 py-1.5 text-[13px] font-medium transition-all duration-200 relative
+                                        flex-1 flex items-center gap-x-3 pl-6 pr-2 py-1.5 text-[13px] font-medium transition-all duration-200 relative
                                         before:absolute before:left-0 before:top-1/2 before:-mt-px before:w-3 before:h-px before:bg-[#E7E7E7]/30
                                         ${isChildActive
                                             ? 'text-white font-bold'
@@ -204,6 +208,17 @@ function NavGroup({ item }) {
                                 >
                                     {child.name}
                                 </Link>
+                                
+                                {hasCreateRoute && (
+                                    <Link
+                                        href={route(createRoute)}
+                                        className="opacity-0 group-hover/child:opacity-100 p-1 mr-2 rounded text-[#E7E7E7]/50 hover:text-white hover:bg-white/10 transition-all duration-200"
+                                        title={`Cadastrar ${child.name}`}
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        <Plus className="w-3 h-3" />
+                                    </Link>
+                                )}
                             </li>
                         );
                     })}
