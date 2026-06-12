@@ -5,13 +5,12 @@ namespace App\Models;
 use App\Traits\Tenantable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class TarefaProjeto extends Model
 {
     // Tenantable: aplica TenantScope (filtra por company_id) e auto-stampa
-    // company_id/user_create/user_edit. SoftDeletes: exclusão lógica (deleted_at).
-    use HasFactory, SoftDeletes, Tenantable;
+    // company_id/user_create/user_edit.
+    use HasFactory, Tenantable;
 
     protected $table = 'sts_tarefas_projeto';
 
