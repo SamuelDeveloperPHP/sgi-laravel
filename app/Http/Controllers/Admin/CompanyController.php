@@ -6,10 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ReviewCompanyRegistrationRequest;
 use App\Models\Company;
 use App\Models\CompanyRegistrationReview;
+use App\Models\Module;
 use App\Notifications\CompanyRegistrationReviewed;
+use App\Support\CompanyModuleAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
@@ -127,6 +131,13 @@ class CompanyController extends Controller
 
         $query = Company::query();
 
+        if (Schema::hasTable('company_module')) {
+            $query->withCount([
+                'modules as enabled_modules_count' => fn ($moduleQuery) => $moduleQuery
+                    ->wherePivot('is_enabled', true),
+            ]);
+        }
+
         if ($search) {
             $query->where('nome_fantasia', 'like', "%{$search}%")
                 ->orWhere('razao_social', 'like', "%{$search}%")
@@ -156,6 +167,8 @@ class CompanyController extends Controller
         return Inertia::render('Admin/Companies/Form', [
             'company' => new Company,
             'isEdit' => false,
+            'modules' => $this->moduleOptions(),
+            'enabledModuleIds' => CompanyModuleAccess::defaultEnabledModuleIds(),
         ]);
     }
 
@@ -178,9 +191,23 @@ class CompanyController extends Controller
             'nome_administrador' => 'nullable|string|max:255',
             'email_administrador' => 'nullable|email|max:255',
             'observacoes' => 'nullable|string',
+            'module_ids' => 'nullable|array',
+            'module_ids.*' => [
+                'integer',
+                Rule::exists('modules', 'id')
+                    ->where(fn ($query) => $query
+                        ->where('is_active', true)
+                        ->where('default_access_policy', '!=', Module::ACCESS_PRIVATE)),
+            ],
         ]);
 
-        Company::create($validated);
+        $moduleIds = $validated['module_ids'] ?? CompanyModuleAccess::defaultEnabledModuleIds();
+        unset($validated['module_ids']);
+
+        DB::transaction(function () use ($validated, $moduleIds) {
+            $company = Company::create($validated);
+            CompanyModuleAccess::syncEnabledFor($company, $moduleIds);
+        });
 
         return redirect()->route('admin.companies.index')->with('message', 'Empresa criada com sucesso!');
     }
@@ -190,11 +217,15 @@ class CompanyController extends Controller
         return Inertia::render('Admin/Companies/Form', [
             'company' => $company,
             'isEdit' => true,
+            'modules' => $this->moduleOptions(),
+            'enabledModuleIds' => CompanyModuleAccess::enabledModuleIdsFor($company),
         ]);
     }
 
     public function update(Request $request, Company $company)
     {
+        $syncModules = $request->exists('module_ids');
+
         $validated = $request->validate([
             'nome_fantasia' => 'required|string|max:255',
             'razao_social' => 'nullable|string|max:255',
@@ -212,11 +243,59 @@ class CompanyController extends Controller
             'nome_administrador' => 'nullable|string|max:255',
             'email_administrador' => 'nullable|email|max:255',
             'observacoes' => 'nullable|string',
+            'module_ids' => 'nullable|array',
+            'module_ids.*' => [
+                'integer',
+                Rule::exists('modules', 'id')
+                    ->where(fn ($query) => $query
+                        ->where('is_active', true)
+                        ->where('default_access_policy', '!=', Module::ACCESS_PRIVATE)),
+            ],
         ]);
 
-        $company->update($validated);
+        $moduleIds = $validated['module_ids'] ?? [];
+        unset($validated['module_ids']);
+
+        DB::transaction(function () use ($company, $validated, $syncModules, $moduleIds) {
+            $company->update($validated);
+
+            if ($syncModules) {
+                CompanyModuleAccess::syncEnabledFor($company, $moduleIds);
+            }
+        });
 
         return redirect()->route('admin.companies.index')->with('message', 'Empresa atualizada com sucesso!');
+    }
+
+    private function moduleOptions(): array
+    {
+        if (! Schema::hasTable('modules')) {
+            return [];
+        }
+
+        return Module::with(['children' => fn ($query) => $query->orderBy('order')])
+            ->whereNull('parent_id')
+            ->orderBy('order')
+            ->get()
+            ->map(fn (Module $module) => $this->formatModuleOption($module))
+            ->values()
+            ->all();
+    }
+
+    private function formatModuleOption(Module $module): array
+    {
+        return [
+            'id' => $module->id,
+            'name' => $module->name,
+            'slug' => $module->slug,
+            'is_active' => (bool) $module->is_active,
+            'is_private' => $module->default_access_policy === Module::ACCESS_PRIVATE,
+            'default_access_policy' => $module->default_access_policy,
+            'children' => $module->children
+                ->map(fn (Module $child) => $this->formatModuleOption($child))
+                ->values()
+                ->all(),
+        ];
     }
 
     public function destroy(Company $company)

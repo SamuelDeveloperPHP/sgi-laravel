@@ -3,7 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Save, ArrowLeft, Search } from 'lucide-react';
 
-export default function Form({ auth, company, isEdit }) {
+export default function Form({ auth, company, isEdit, modules = [], enabledModuleIds = [] }) {
     const { data, setData, post, put, processing, errors } = useForm({
         nome_fantasia: company.nome_fantasia || '',
         razao_social: company.razao_social || '',
@@ -21,10 +21,61 @@ export default function Form({ auth, company, isEdit }) {
         nome_administrador: company.nome_administrador || '',
         email_administrador: company.email_administrador || '',
         observacoes: company.observacoes || '',
+        module_ids: enabledModuleIds || [],
     });
 
     const [isFetchingCep, setIsFetchingCep] = useState(false);
     const [isFetchingCnpj, setIsFetchingCnpj] = useState(false);
+    const policyLabels = {
+        public: 'Publico',
+        trial_15: '15 dias',
+        trial_30: '30 dias',
+        private: 'Privado',
+    };
+
+    const isModuleSelected = (id) => data.module_ids.map(Number).includes(Number(id));
+
+    const toggleModule = (id, checked) => {
+        const selected = new Set(data.module_ids.map(Number));
+
+        if (checked) {
+            selected.add(Number(id));
+        } else {
+            selected.delete(Number(id));
+        }
+
+        setData('module_ids', Array.from(selected));
+    };
+
+    const renderModuleOption = (module, isChild = false) => {
+        const disabled = module.is_private || !module.is_active;
+
+        return (
+            <label
+                key={module.id}
+                className={`flex items-start gap-3 rounded-lg border p-3 text-sm transition ${
+                    disabled
+                        ? 'border-slate-200 bg-slate-50 text-slate-400 dark:border-slate-700 dark:bg-slate-900/40'
+                        : 'border-slate-200 bg-white hover:border-teal-300 dark:border-slate-700 dark:bg-slate-900'
+                } ${isChild ? 'ml-6' : ''}`}
+            >
+                <input
+                    type="checkbox"
+                    className="mt-1 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                    checked={isModuleSelected(module.id)}
+                    disabled={disabled}
+                    onChange={(event) => toggleModule(module.id, event.target.checked)}
+                />
+                <span className="min-w-0 flex-1">
+                    <span className="block font-medium text-slate-800 dark:text-slate-100">{module.name}</span>
+                    <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">{module.slug}</span>
+                </span>
+                <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-200">
+                    {policyLabels[module.default_access_policy] || 'Publico'}
+                </span>
+            </label>
+        );
+    };
 
     const handleCnpjChange = (e) => {
         let value = e.target.value.replace(/\D/g, ''); // Remove tudo que não for número
@@ -335,6 +386,17 @@ export default function Form({ auth, company, isEdit }) {
                                         value={data.observacoes}
                                         onChange={e => setData('observacoes', e.target.value)}
                                     ></textarea>
+                                </div>
+
+                                <div>
+                                    <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 border-b pb-2 mb-4">Modulos liberados</h3>
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                                        {modules.flatMap((module) => [
+                                            renderModuleOption(module),
+                                            ...(module.children || []).map((child) => renderModuleOption(child, true)),
+                                        ])}
+                                    </div>
+                                    {errors.module_ids && <p className="mt-2 text-sm text-red-600">{errors.module_ids}</p>}
                                 </div>
 
                                 <div className="flex items-center justify-end gap-4 mt-8 pt-4 border-t border-gray-200 dark:border-gray-700">

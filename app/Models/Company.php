@@ -55,6 +55,13 @@ class Company extends Model
         return $this->hasMany(User::class);
     }
 
+    public function modules()
+    {
+        return $this->belongsToMany(Module::class)
+            ->withPivot('is_enabled')
+            ->withTimestamps();
+    }
+
     public function registrationReviews()
     {
         return $this->hasMany(CompanyRegistrationReview::class);

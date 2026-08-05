@@ -41,4 +41,11 @@ class Module extends Model
     {
         return $this->hasMany(Module::class, 'parent_id')->orderBy('order');
     }
+
+    public function companies()
+    {
+        return $this->belongsToMany(Company::class)
+            ->withPivot('is_enabled')
+            ->withTimestamps();
+    }
 }
