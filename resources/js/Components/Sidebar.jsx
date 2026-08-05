@@ -63,15 +63,7 @@ const DynamicIcon = ({ iconName, className = "h-5 w-5 shrink-0" }) => {
 
 export default function Sidebar({ isOpen, setIsOpen, isDarkMode, toggleDarkMode }) {
     const { auth, navigation = [] } = usePage().props;
-    const userPermissions = auth.user?.permissions || [];
     const hasFmAccess = auth.user?.is_master_admin || auth.fm_empresa_access;
-
-    // Helper para verificar permissão
-    const can = (permission) => {
-        if (!permission) return true; // Se não exigir permissão, permite
-        if (auth.user?.is_master_admin) return true; // Master admin bypass
-        return userPermissions.includes(permission);
-    };
 
     return (
         <>
@@ -100,17 +92,8 @@ export default function Sidebar({ isOpen, setIsOpen, isDarkMode, toggleDarkMode 
                     {navigation.map((item) => {
                         // Se for um item com dropdown
                         if (item.children && item.children.length > 0) {
-                            // Filtra apenas sub-itens que tem permissão
-                            const allowedChildren = item.children.filter(child => can(child.permission));
-                            
-                            // Se não sobrou nenhum filho autorizado, não exibe o grupo todo
-                            if (allowedChildren.length === 0) return null;
-                            
-                            return <NavGroup key={item.name} item={{...item, children: allowedChildren}} />;
+                            return <NavGroup key={item.name} item={item} />;
                         }
-
-                        // Se for um item simples
-                        if (!can(item.permission)) return null;
 
                         const isActive = item.href ? (route().current(item.href + '.*') || route().current(item.href)) : false;
                         

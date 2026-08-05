@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\User;
 use App\Services\CnpjLookupService;
 use App\Services\CnpjValidator;
+use App\Support\ModuleAccess;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -61,6 +62,43 @@ class RegisteredUserController extends Controller
     public function store(RegisterCompanyRequest $request): RedirectResponse
     {
         $validated = $request->validated();
+
+        if (($validated['registration_type'] ?? 'company') === 'public') {
+            $user = DB::transaction(function () use ($validated): User {
+                $company = Company::create([
+                    'nome_fantasia' => 'Conta publica - '.$validated['name'],
+                    'razao_social' => 'Conta publica temporaria',
+                    'cnpj' => null,
+                    'status' => true,
+                    'registration_status' => 'approved',
+                    'email_corporativo' => $validated['email'],
+                    'nome_administrador' => $validated['name'],
+                    'email_administrador' => $validated['email'],
+                ]);
+
+                $user = User::create([
+                    'name' => $validated['name'],
+                    'email' => $validated['email'],
+                    'password' => Hash::make($validated['password']),
+                ]);
+                $user->forceFill([
+                    'company_id' => $company->id,
+                    'is_public_account' => true,
+                    'public_access_started_at' => now(),
+                    'public_access_expires_at' => ModuleAccess::defaultPublicAccountExpiresAt(),
+                ])->save();
+                $user->companies()->attach($company->id);
+
+                return $user;
+            });
+
+            event(new Registered($user));
+
+            Auth::login($user);
+
+            return redirect(route('dashboard', absolute: false));
+        }
+
         $cnpjData = $this->cnpjService->lookup($validated['cnpj']);
         $approved = $cnpjData !== null
             && $this->cnpjService->canAutoApprove($cnpjData, $validated['dominio_corporativo']);

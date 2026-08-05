@@ -19,6 +19,7 @@ export default function Form({ auth, module, parents }) {
         order: module.order || 0,
         is_active: module.is_active !== undefined ? module.is_active : true,
         is_visible_in_menu: module.is_visible_in_menu !== undefined ? module.is_visible_in_menu : true,
+        default_access_policy: module.default_access_policy || 'public',
     });
 
     const handleSubmit = (e) => {
@@ -160,6 +161,23 @@ export default function Form({ auth, module, parents }) {
                                         onChange={(e) => setData('order', e.target.value)}
                                     />
                                     <InputError message={errors.order} className="mt-2" />
+                                </div>
+
+                                <div className="md:col-span-2">
+                                    <InputLabel htmlFor="default_access_policy" value="Disponibilidade padrao" />
+                                    <select
+                                        id="default_access_policy"
+                                        className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                                        value={data.default_access_policy}
+                                        onChange={(e) => setData('default_access_policy', e.target.value)}
+                                    >
+                                        <option value="public">Modulo publico</option>
+                                        <option value="trial_15">Disponivel por 15 dias</option>
+                                        <option value="trial_30">Disponivel por 30 dias</option>
+                                        <option value="private">Privado / Administrador Master</option>
+                                    </select>
+                                    <p className="text-xs text-gray-500 mt-1">Define o acesso padrao para novas empresas e contas publicas temporarias.</p>
+                                    <InputError message={errors.default_access_policy} className="mt-2" />
                                 </div>
                             </div>
 

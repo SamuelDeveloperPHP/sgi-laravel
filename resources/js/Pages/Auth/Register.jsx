@@ -31,6 +31,7 @@ function Field({ id, label, error, required = false, hint, children }) {
 
 export default function Register() {
     const { data, setData, post, processing, errors, reset } = useForm({
+        registration_type: 'company',
         cnpj: '', nome_fantasia: '', razao_social: '',
         cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '',
         telefone: '', dominio_corporativo: '', email_corporativo: '',
@@ -103,7 +104,30 @@ export default function Register() {
             </div>
 
             <form onSubmit={submit} className="space-y-8">
-                <section>
+                <section className="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+                    <InputLabel value="Tipo de cadastro" />
+                    <div className="mt-3 grid gap-3 md:grid-cols-2">
+                        <button
+                            type="button"
+                            onClick={() => setData('registration_type', 'company')}
+                            className={`rounded-lg border px-4 py-3 text-left text-sm transition ${data.registration_type === 'company' ? 'border-teal-500 bg-teal-50 text-teal-900' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}
+                        >
+                            <span className="block font-semibold">Empresa com CNPJ</span>
+                            <span className="mt-1 block text-xs">Valida dominio corporativo e cria o administrador da empresa.</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setData('registration_type', 'public')}
+                            className={`rounded-lg border px-4 py-3 text-left text-sm transition ${data.registration_type === 'public' ? 'border-teal-500 bg-teal-50 text-teal-900' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}
+                        >
+                            <span className="block font-semibold">Acesso publico temporario</span>
+                            <span className="mt-1 block text-xs">Permite e-mail pessoal e dispensa CNPJ.</span>
+                        </button>
+                    </div>
+                    <InputError message={errors.registration_type} className="mt-2" />
+                </section>
+
+                {data.registration_type === 'company' && <section>
                     <h2 className="mb-4 flex items-center gap-2 font-semibold text-slate-800 dark:text-slate-100"><Building2 className="h-5 w-5 text-teal-600" /> Empresa</h2>
                     <div className="grid gap-4 md:grid-cols-2">
                         <div className="md:col-span-2">
@@ -120,9 +144,9 @@ export default function Register() {
                         <Field id="nome_fantasia" label="Nome fantasia" error={errors.nome_fantasia} required><TextInput id="nome_fantasia" value={data.nome_fantasia} className={inputClass} onChange={(e) => setData('nome_fantasia', e.target.value)} required /></Field>
                         <Field id="razao_social" label="Razão social" error={errors.razao_social} required><TextInput id="razao_social" value={data.razao_social} className={inputClass} onChange={(e) => setData('razao_social', e.target.value)} required /></Field>
                     </div>
-                </section>
+                </section>}
 
-                <section>
+                {data.registration_type === 'company' && <section>
                     <h2 className="mb-4 font-semibold text-slate-800 dark:text-slate-100">Endereço da empresa</h2>
                     <div className="grid gap-4 md:grid-cols-3">
                         <Field id="cep" label="CEP" error={errors.cep}><TextInput id="cep" value={data.cep} className={inputClass} inputMode="numeric" onChange={(e) => setData('cep', formatCep(e.target.value))} /></Field>
@@ -133,17 +157,22 @@ export default function Register() {
                         <div className="md:col-span-2"><Field id="cidade" label="Cidade" error={errors.cidade}><TextInput id="cidade" value={data.cidade} className={inputClass} onChange={(e) => setData('cidade', e.target.value)} /></Field></div>
                         <Field id="estado" label="UF" error={errors.estado}><TextInput id="estado" value={data.estado} maxLength={2} className={inputClass} onChange={(e) => setData('estado', e.target.value.toUpperCase())} /></Field>
                     </div>
-                </section>
+                </section>}
 
                 <section>
                     <h2 className="mb-4 flex items-center gap-2 font-semibold text-slate-800 dark:text-slate-100"><ShieldCheck className="h-5 w-5 text-teal-600" /> Contatos e administrador</h2>
                     <div className="grid gap-4 md:grid-cols-2">
+                        {data.registration_type === 'company' ? <>
                         <Field id="dominio_corporativo" label="Domínio oficial da empresa" error={errors.dominio_corporativo} required hint="Exemplo: engetecnica.com.br"><TextInput id="dominio_corporativo" value={data.dominio_corporativo} className={inputClass} placeholder="empresa.com.br" onChange={(e) => setData('dominio_corporativo', e.target.value)} required /></Field>
                         <Field id="telefone" label="Telefone" error={errors.telefone}><TextInput id="telefone" value={data.telefone} className={inputClass} onChange={(e) => setData('telefone', e.target.value)} /></Field>
                         <Field id="email_corporativo" label="E-mail geral da empresa" error={errors.email_corporativo} required><TextInput id="email_corporativo" type="email" value={data.email_corporativo} className={inputClass} onChange={(e) => setData('email_corporativo', e.target.value)} required /></Field>
                         <Field id="name" label="Nome do administrador" error={errors.name} required><TextInput id="name" value={data.name} className={inputClass} autoComplete="name" onChange={(e) => setData('name', e.target.value)} required /></Field>
                         <Field id="email" label="E-mail do administrador e recuperação principal" error={errors.email} required hint="Deve pertencer exatamente ao domínio oficial informado."><TextInput id="email" type="email" value={data.email} className={inputClass} autoComplete="username" onChange={(e) => setData('email', e.target.value)} required /></Field>
                         <Field id="email_recuperacao_secundario" label="Segundo e-mail de recuperação" error={errors.email_recuperacao_secundario} required hint="Deve ser corporativo e diferente do administrador."><TextInput id="email_recuperacao_secundario" type="email" value={data.email_recuperacao_secundario} className={inputClass} onChange={(e) => setData('email_recuperacao_secundario', e.target.value)} required /></Field>
+                        </> : <>
+                        <Field id="name" label="Nome" error={errors.name} required><TextInput id="name" value={data.name} className={inputClass} autoComplete="name" onChange={(e) => setData('name', e.target.value)} required /></Field>
+                        <Field id="email" label="E-mail" error={errors.email} required hint="Pode ser e-mail pessoal. O acesso sera temporario."><TextInput id="email" type="email" value={data.email} className={inputClass} autoComplete="username" onChange={(e) => setData('email', e.target.value)} required /></Field>
+                        </>}
                         <Field id="password" label="Senha" error={errors.password} required><TextInput id="password" type="password" value={data.password} className={inputClass} autoComplete="new-password" onChange={(e) => setData('password', e.target.value)} required /></Field>
                         <Field id="password_confirmation" label="Confirmar senha" error={errors.password_confirmation} required><TextInput id="password_confirmation" type="password" value={data.password_confirmation} className={inputClass} autoComplete="new-password" onChange={(e) => setData('password_confirmation', e.target.value)} required /></Field>
                     </div>

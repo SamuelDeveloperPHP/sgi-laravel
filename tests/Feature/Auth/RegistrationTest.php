@@ -3,10 +3,14 @@
 namespace Tests\Feature\Auth;
 
 use App\Models\Company;
+use App\Models\Module;
 use App\Models\User;
+use App\Notifications\PublicAccountBlocked;
+use App\Support\ModuleAccess;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class RegistrationTest extends TestCase
@@ -56,6 +60,95 @@ class RegistrationTest extends TestCase
         $response->assertSessionHasErrors('email');
         $this->assertGuest();
         $this->assertDatabaseCount('companies', 0);
+    }
+
+    public function test_public_email_can_register_temporarily_without_cnpj(): void
+    {
+        Module::create([
+            'name' => 'Dashboard',
+            'slug' => 'list-dashboard',
+            'route_name' => 'dashboard',
+            'default_access_policy' => 'public',
+        ]);
+
+        $response = $this->post('/register', [
+            'registration_type' => 'public',
+            'name' => 'Usuario Publico',
+            'email' => 'publico@gmail.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ]);
+
+        $response->assertRedirect(route('dashboard', absolute: false));
+        $this->assertAuthenticated();
+
+        $user = User::where('email', 'publico@gmail.com')->firstOrFail();
+        $this->assertTrue($user->is_public_account);
+        $this->assertNotNull($user->company_id);
+        $this->assertNotNull($user->public_access_expires_at);
+        $this->assertDatabaseHas('companies', [
+            'id' => $user->company_id,
+            'cnpj' => null,
+            'status' => true,
+        ]);
+    }
+
+    public function test_expired_public_account_is_blocked_on_login_and_notified(): void
+    {
+        Notification::fake();
+
+        $company = Company::factory()->create();
+        $user = User::factory()->create([
+            'email' => 'expirado@gmail.com',
+            'email_verified_at' => now(),
+        ]);
+        $user->forceFill([
+            'company_id' => $company->id,
+            'is_public_account' => true,
+            'is_active' => true,
+            'public_access_started_at' => now()->subDays(20),
+            'public_access_expires_at' => now()->subDay(),
+        ])->save();
+
+        $response = $this->post('/login', [
+            'email' => 'expirado@gmail.com',
+            'password' => 'password',
+        ]);
+
+        $response->assertSessionHasErrors('email');
+        $this->assertGuest();
+        $this->assertFalse($user->refresh()->is_active);
+        Notification::assertSentTo($user, PublicAccountBlocked::class);
+    }
+
+    public function test_module_access_policy_blocks_private_module_for_public_user(): void
+    {
+        $publicModule = Module::create([
+            'name' => 'Dashboard',
+            'slug' => 'list-dashboard',
+            'route_name' => 'dashboard',
+            'default_access_policy' => 'public',
+        ]);
+        $privateModule = Module::create([
+            'name' => 'Projetos',
+            'slug' => 'list-projetos',
+            'route_name' => 'projetos.index',
+            'default_access_policy' => 'private',
+        ]);
+        $company = Company::factory()->create();
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $user->forceFill([
+            'company_id' => $company->id,
+            'is_public_account' => true,
+            'is_active' => true,
+            'public_access_started_at' => now(),
+            'public_access_expires_at' => now()->addDays(15),
+        ])->save();
+
+        $this->assertTrue(ModuleAccess::moduleVisibleToUser($user, $publicModule));
+        $this->assertFalse(ModuleAccess::moduleVisibleToUser($user, $privateModule));
+        $this->assertTrue(ModuleAccess::allowsPermission($user, 'view-dashboard'));
+        $this->assertFalse(ModuleAccess::allowsPermission($user, 'view-projetos'));
     }
 
     public function test_administrator_and_recovery_emails_must_match_company_domain(): void
