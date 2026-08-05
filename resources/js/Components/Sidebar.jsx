@@ -15,7 +15,14 @@ import {
     ChevronRight,
     Award,
     Blocks,
-    Plus
+    Plus,
+    FolderOpen,
+    ClipboardList,
+    GraduationCap,
+    BookOpen,
+    MapPin,
+    Presentation,
+    UserCheck
 } from 'lucide-react';
 import ApplicationLogo from '@/Components/ApplicationLogo';
 
@@ -29,7 +36,10 @@ const lucideIcons = {
     Users,
     Briefcase,
     Award,
-    Blocks
+    Blocks,
+    FolderOpen,
+    GraduationCap,
+    UserCheck
 };
 
 // Componente para renderizar ícones dinamicamente (Lucide ou FontAwesome/Remix)
@@ -54,6 +64,7 @@ const DynamicIcon = ({ iconName, className = "h-5 w-5 shrink-0" }) => {
 export default function Sidebar({ isOpen, setIsOpen, isDarkMode, toggleDarkMode }) {
     const { auth, navigation = [] } = usePage().props;
     const userPermissions = auth.user?.permissions || [];
+    const hasFmAccess = auth.user?.is_master_admin || auth.fm_empresa_access;
 
     // Helper para verificar permissão
     const can = (permission) => {
@@ -66,12 +77,12 @@ export default function Sidebar({ isOpen, setIsOpen, isDarkMode, toggleDarkMode 
         <>
             {/* Mobile overlay */}
             <div 
-                className={`fixed inset-0 bg-slate-900/80 z-40 lg:hidden transition-opacity duration-300 ease-in-out ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} 
+                className={`fixed inset-0 bg-slate-900/80 z-40 lg:hidden print:hidden transition-opacity duration-300 ease-in-out ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} 
                 onClick={() => setIsOpen(false)}
             />
 
             {/* Sidebar container */}
-            <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-gentelella-sidebar border-r border-slate-800 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-gentelella-sidebar border-r border-slate-800 print:hidden transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 
                 {/* Logo area */}
                 <div className="flex h-16 shrink-0 items-center justify-between px-6 border-b border-white/10">
@@ -124,6 +135,79 @@ export default function Sidebar({ isOpen, setIsOpen, isDarkMode, toggleDarkMode 
                             </div>
                         );
                     })}
+
+                    {/* ── Gerenciador de Arquivos ────────────────────────── */}
+                    {hasFmAccess && (() => {
+                        const isActive = route().current('file-manager.*');
+                        return (
+                            <div className="mt-auto pt-2 border-t border-white/10">
+                                <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-[#E7E7E7]/40">Arquivos</p>
+                                <Link
+                                    href={route('file-manager.index')}
+                                    className={`
+                                        group flex items-center gap-x-3 p-3 text-sm leading-6 font-medium transition-all duration-200 border-l-[4px]
+                                        ${isActive
+                                            ? 'border-[#1ABB9C] bg-gentelella-sidebarHover text-white shadow-[inset_-5px_0_10px_rgba(0,0,0,0.1)]'
+                                            : 'border-transparent text-[#E7E7E7] hover:border-transparent hover:bg-gentelella-sidebarHover hover:text-[#1ABB9C]'}
+                                    `}
+                                >
+                                    <FolderOpen
+                                        className={`h-5 w-5 shrink-0 transition-colors duration-200 ${isActive ? 'text-[#1ABB9C]' : 'text-[#E7E7E7] group-hover:text-[#1ABB9C]'}`}
+                                        aria-hidden="true"
+                                    />
+                                    Gerenciar Arquivos
+                                </Link>
+                            </div>
+                        );
+                    })()}
+
+                    {/* ── Recursos Humanos & Departamento Pessoal (Master Admin Only) ────────────── */}
+                    {auth.user?.is_master_admin && (() => {
+                        return (
+                            <div className="mt-2 pt-2 border-t border-white/10 mb-4">
+                                <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-[#E7E7E7]/40">RH / DP</p>
+                                <NavGroup item={{
+                                    name: 'Recursos Humanos',
+                                    icon: 'Users',
+                                    children: [
+                                        { name: 'Dashboard', href: 'admin.hr.dashboard', permission: null },
+                                        { name: 'Áreas', href: 'admin.hr.areas.index', permission: null },
+                                        { name: 'Cargos', href: 'admin.hr.cargos.index', permission: null },
+                                        { name: 'Funcionários', href: 'admin.funcionarios.index', permission: null },
+                                    ]
+                                }} />
+                                <NavGroup item={{
+                                    name: 'Departamento Pessoal',
+                                    icon: 'Briefcase',
+                                    children: [
+                                        { name: 'Benefícios', href: 'admin.hr.beneficios.index', permission: null },
+                                        { name: 'Controle de Férias', href: 'admin.ferias.index', permission: null },
+                                        { name: 'Folha de Pagamento', href: 'admin.hr.folha-pagamento.index', permission: null },
+                                    ]
+                                }} />
+                                <NavGroup item={{
+                                    name: 'Treinamentos',
+                                    icon: 'GraduationCap',
+                                    children: [
+                                        { name: 'Dashboard', href: 'treinamentos.dashboard', permission: null },
+                                        { name: 'Agenda (Turmas)', href: 'treinamentos.index', permission: null },
+                                        { name: 'Cursos', href: 'treinamentos-cursos.index', permission: null },
+                                        { name: 'Locais', href: 'treinamentos-locais.index', permission: null },
+                                        { name: 'Metas', href: 'treinamentos-metas.index', permission: null },
+                                        { name: 'Relatórios', href: 'treinamentos.relatorios', permission: null },
+                                    ]
+                                }} />
+                                <NavGroup item={{
+                                    name: 'Recrutamento & Seleção',
+                                    icon: 'UserCheck',
+                                    children: [
+                                        { name: 'Dashboard', href: 'processos-seletivos-dashboard.index', permission: null },
+                                        { name: 'Vagas', href: 'processos-seletivos.index', permission: null },
+                                    ]
+                                }} />
+                            </div>
+                        );
+                    })()}
                 </nav>
 
                 {/* Footer (Theme Toggle) */}

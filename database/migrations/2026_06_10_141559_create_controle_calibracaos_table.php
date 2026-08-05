@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('controle_calibracaos', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('company_id')->constrained('sts_companies')->onDelete('cascade');
+            $table->foreignId('company_id')->constrained('companies')->onDelete('cascade');
             $table->string('equipamento');
             $table->string('local')->nullable();
             $table->string('identificacao')->nullable();

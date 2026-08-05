@@ -8,7 +8,7 @@ class UpdateControleCalibracaoRequest extends FormRequest
 {
     public function authorize()
     {
-        return auth()->check() && auth()->user()->hasPermissionTo('manage-controle-calibracoes');
+        return auth()->check() && auth()->user()->can('manage-controle-calibracoes');
     }
 
     public function rules()

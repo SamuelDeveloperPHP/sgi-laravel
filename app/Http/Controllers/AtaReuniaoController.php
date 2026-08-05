@@ -210,7 +210,7 @@ class AtaReuniaoController extends Controller
         // Verifica se o usuario tem permissao ou e participante
         $isParticipante = $ata->participantes->contains('user_id', $user->id);
         
-        if (!$isParticipante && !$user->hasPermissionTo('view-atas-reuniao')) {
+        if (!$isParticipante && !$user->can('view-atas-reuniao')) {
             abort(403, 'Você não tem acesso a esta ata.');
         }
 

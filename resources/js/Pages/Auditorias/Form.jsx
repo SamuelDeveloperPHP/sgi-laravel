@@ -1,8 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Save, ArrowLeft } from 'lucide-react';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import ReactQuill from '@/Components/RichTextEditor';
 
 export default function Form({ auth, auditoria, isEdit }) {
     const { data, setData, post, put, processing, errors } = useForm({

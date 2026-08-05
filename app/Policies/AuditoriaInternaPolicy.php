@@ -10,4 +10,5 @@ namespace App\Policies;
  */
 class AuditoriaInternaPolicy extends AbstractTenantPolicy
 {
+    protected string $permissionResource = 'auditorias';
 }

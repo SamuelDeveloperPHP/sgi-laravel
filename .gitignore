@@ -26,3 +26,11 @@ Thumbs.db
 # Claude Code artifacts (memory, worktrees, agent context)
 /.claude
 
+# Locais — NÃO versionar: scripts de rascunho e planilhas do negócio
+# (dados pessoais de funcionários / LGPD; e binários grandes)
+/scratch/
+/excel/
+
+# Estado local do Docker CLI (contém token_seed) — nunca versionar
+/.docker-cli/
+

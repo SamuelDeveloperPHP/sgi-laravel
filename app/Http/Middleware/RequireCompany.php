@@ -59,7 +59,7 @@ class RequireCompany
         $user = $request->user();
 
         // Sem usuário autenticado: deixa o middleware 'auth' lidar
-        if (!$user) {
+        if (! $user) {
             return $next($request);
         }
 
@@ -69,7 +69,17 @@ class RequireCompany
             return $next($request);
         }
 
-        // Já tem empresa: segue normalmente — TenantScope cuida
+        if ($user->company_id
+            && (! $user->company?->status || $user->company?->registration_status !== 'approved')) {
+            if ($request->routeIs('onboarding.pending')) {
+                return $next($request);
+            }
+
+            return redirect()->route('onboarding.pending')
+                ->with('info', 'Seu pré-cadastro está em análise.');
+        }
+
+        // Já tem empresa ativa: segue normalmente — TenantScope cuida
         // do isolamento daqui pra frente
         if ($user->company_id) {
             return $next($request);

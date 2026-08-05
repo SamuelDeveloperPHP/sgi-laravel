@@ -8,7 +8,7 @@ class AprovarFinalEscopoRequest extends FormRequest
 {
     public function authorize()
     {
-        return auth()->check() && auth()->user()->hasPermissionTo('manage-escopo');
+        return auth()->check() && auth()->user()->can('manage-escopo');
     }
 
     public function rules()

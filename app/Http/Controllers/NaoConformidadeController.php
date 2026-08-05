@@ -63,7 +63,7 @@ class NaoConformidadeController extends Controller
                 foreach ($validated['evidencias'] as $index => $evidencia) {
                     if (isset($evidencia['foto']) && $request->hasFile("evidencias.{$index}.foto")) {
                         $path = $request->file("evidencias.{$index}.foto")
-                            ->store("ncs/{$companyId}", 'public');
+                            ->store("companies/{$companyId}/nao-conformidades", 'local');
                         $validated['evidencias'][$index]['foto'] = $path;
                     }
                 }
@@ -120,7 +120,7 @@ class NaoConformidadeController extends Controller
                 foreach ($validated['evidencias'] as $index => $evidencia) {
                     if (isset($evidencia['foto']) && $request->hasFile("evidencias.{$index}.foto")) {
                         $path = $request->file("evidencias.{$index}.foto")
-                            ->store("ncs/{$companyId}", 'public');
+                            ->store("companies/{$companyId}/nao-conformidades", 'local');
                         $validated['evidencias'][$index]['foto'] = $path;
                     }
                 }
@@ -160,5 +160,18 @@ class NaoConformidadeController extends Controller
             Log::error($e->getMessage());
             return back()->with('error', 'Erro interno ao realizar operação.');
         }
+    }
+
+    public function evidencia(NaoConformidade $naoConformidade, int $index)
+    {
+        $this->authorize('view', $naoConformidade);
+
+        $path = data_get($naoConformidade->evidencias ?? [], "{$index}.foto");
+
+        if (!is_string($path) || $path === '' || !Storage::disk('local')->exists($path)) {
+            abort(404);
+        }
+
+        return Storage::disk('local')->response($path);
     }
 }

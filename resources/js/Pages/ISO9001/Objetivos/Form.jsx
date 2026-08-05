@@ -1,8 +1,7 @@
 import React from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, Link } from '@inertiajs/react';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import RichTextEditor from '@/Components/RichTextEditor';
 import { Save, ArrowLeft } from 'lucide-react';
 import Select from 'react-select';
 import InputLabel from '@/Components/InputLabel';
@@ -34,16 +33,6 @@ export default function Form({ auth, objetivo, users, currentCompanyId }) {
         } else {
             post(route('objetivos-qualidade.store'));
         }
-    };
-
-    const modules = {
-        toolbar: [
-            [{ 'header': [1, 2, 3, false] }],
-            ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-            [{'list': 'ordered'}, {'list': 'bullet'}, {'indent': '-1'}, {'indent': '+1'}],
-            ['link', 'image'],
-            ['clean']
-        ],
     };
 
     return (
@@ -108,17 +97,9 @@ export default function Form({ auth, objetivo, users, currentCompanyId }) {
 
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Descrição / Detalhes</label>
-                                <style>{`
-                                    .ql-editor {
-                                        min-height: 250px;
-                                    }
-                                `}</style>
-                                <ReactQuill 
-                                    theme="snow" 
+                                <RichTextEditor
                                     value={data.descricao} 
                                     onChange={(val) => setData('descricao', val)}
-                                    modules={modules}
-                                    className="bg-white dark:text-slate-900"
                                 />
                                 {errors.descricao && <p className="text-sm text-red-600 mt-1">{errors.descricao}</p>}
                             </div>

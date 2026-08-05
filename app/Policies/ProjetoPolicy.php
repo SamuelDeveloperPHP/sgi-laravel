@@ -15,4 +15,5 @@ namespace App\Policies;
  */
 class ProjetoPolicy extends AbstractTenantPolicy
 {
+    protected string $permissionResource = 'projetos';
 }

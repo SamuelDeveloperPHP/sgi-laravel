@@ -20,7 +20,10 @@ class FornecedorDocumentoController extends Controller
         DB::beginTransaction();
         try {
             $data = $request->validated();
-            $path = $request->file('arquivo')->store('fornecedores/documentos', 'public');
+            $path = $request->file('arquivo')->store(
+                'companies/' . $fornecedor->company_id . '/fornecedores/documentos',
+                'local'
+            );
 
             $documento = $fornecedor->documentos()->create([
                 'nome_documento' => $data['nome_documento'],
@@ -42,18 +45,26 @@ class FornecedorDocumentoController extends Controller
 
     public function download(FornecedorDocumento $documento)
     {
-        if (!auth()->user()->hasPermissionTo('view-fornecedores')) {
+        if (!auth()->user()->can('view-fornecedores')) {
             abort(403);
         }
         
-        return Storage::disk('public')->response($documento->arquivo);
+        $this->assertSameTenant($documento);
+
+        if (!Storage::disk('local')->exists($documento->arquivo)) {
+            abort(404);
+        }
+
+        return Storage::disk('local')->response($documento->arquivo);
     }
 
     public function avaliar(Request $request, FornecedorDocumento $documento)
     {
-        if (!auth()->user()->hasPermissionTo('manage-fornecedores')) {
+        if (!auth()->user()->can('manage-fornecedores')) {
             abort(403);
         }
+
+        $this->assertSameTenant($documento);
 
         $request->validate([
             'status_aprovacao' => 'required|in:aprovado,reprovado',
@@ -93,13 +104,24 @@ class FornecedorDocumentoController extends Controller
 
     public function destroy(FornecedorDocumento $documento)
     {
-        if (!auth()->user()->hasPermissionTo('manage-fornecedores')) {
+        if (!auth()->user()->can('manage-fornecedores')) {
             abort(403);
         }
 
-        Storage::disk('public')->delete($documento->arquivo);
+        $this->assertSameTenant($documento);
+
+        Storage::disk('local')->delete($documento->arquivo);
         $documento->delete();
 
         return redirect()->back()->with('success', 'Documento removido.');
+    }
+
+    private function assertSameTenant(FornecedorDocumento $documento): void
+    {
+        // A relacao usa o TenantScope de Fornecedor. Para outro tenant,
+        // retorna null e respondemos 404 sem revelar a existencia do ID.
+        if ($documento->fornecedor === null) {
+            abort(404);
+        }
     }
 }

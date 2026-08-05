@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (!Schema::hasTable('sts_projetos')) {
+            return;
+        }
+
         Schema::create('kanban_colunas', function (Blueprint $table) {
             $table->id();
             $table->foreignId('projeto_id')->constrained('sts_projetos')->onDelete('cascade');

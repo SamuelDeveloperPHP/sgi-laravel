@@ -8,7 +8,7 @@ class UpdateDocumentoRegistroRequest extends FormRequest
 {
     public function authorize()
     {
-        return auth()->check() && auth()->user()->hasPermissionTo('manage-controle-documentos');
+        return auth()->check() && auth()->user()->can('manage-controle-documentos');
     }
 
     public function rules()

@@ -4,13 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\CompleteOnboardingRequest;
 use App\Models\Company;
+use App\Services\CnpjLookupService;
 use App\Services\CnpjValidator;
-use App\Services\ReceitaWsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\Permission\Models\Role;
@@ -38,9 +39,7 @@ use Spatie\Permission\Models\Role;
  */
 class OnboardingController extends Controller
 {
-    public function __construct(private readonly ReceitaWsService $receitaWs)
-    {
-    }
+    public function __construct(private readonly CnpjLookupService $cnpjService) {}
 
     /**
      * Renderiza o formulário de onboarding.
@@ -62,8 +61,27 @@ class OnboardingController extends Controller
         ]);
     }
 
+    public function pending(Request $request): Response|RedirectResponse
+    {
+        $user = $request->user();
+
+        if (! $user->company_id) {
+            return redirect()->route('onboarding.company');
+        }
+
+        if ($user->company?->status && $user->company?->registration_status === 'approved') {
+            return redirect()->route('dashboard');
+        }
+
+        return Inertia::render('Onboarding/Pending', [
+            'companyName' => $user->company?->nome_fantasia,
+            'registrationStatus' => $user->company?->registration_status,
+            'reviewReason' => $user->company?->registration_review_reason,
+        ]);
+    }
+
     /**
-     * Endpoint AJAX para lookup de CNPJ na ReceitaWS.
+     * Endpoint AJAX para lookup de CNPJ na APIBrasil.
      * Retorna dados sanitizados ou 404 se não encontrar/falhar.
      *
      * NÃO confiamos no resultado para criar a empresa automaticamente
@@ -78,20 +96,20 @@ class OnboardingController extends Controller
 
         $cnpj = $request->input('cnpj');
 
-        // Validação local primeiro — não desperdiça quota da ReceitaWS
+        // Validação local primeiro — não desperdiça quota da APIBrasil
         // se o CNPJ é obviamente inválido
-        if (!CnpjValidator::isValid($cnpj)) {
+        if (! CnpjValidator::isValid($cnpj)) {
             return response()->json([
                 'error' => 'CNPJ inválido.',
             ], 422);
         }
 
-        $data = $this->receitaWs->lookup($cnpj);
+        $data = $this->cnpjService->lookup($cnpj);
 
-        if (!$data) {
+        if (! $data) {
             return response()->json([
-                'error' => 'Não foi possível consultar este CNPJ. Preencha manualmente.',
-            ], 404);
+                'error' => 'Não foi possível consultar este CNPJ na APIBrasil.',
+            ], 503);
         }
 
         return response()->json($data);
@@ -117,6 +135,10 @@ class OnboardingController extends Controller
             $companyId = DB::transaction(function () use ($request, $user) {
                 $validated = $request->validated();
 
+                $cnpjData = $this->cnpjService->lookup($validated['cnpj']);
+                $approved = $cnpjData !== null
+                    && $this->cnpjService->canAutoApprove($cnpjData, $validated['dominio_corporativo']);
+
                 // Cria a empresa com TODOS os dados validados +
                 // nome/email do administrador setados pelo backend
                 // (nao confiavel via form input - sao tomados do
@@ -124,29 +146,33 @@ class OnboardingController extends Controller
                 $company = Company::create([
                     // Identificacao
                     'nome_fantasia' => $validated['nome_fantasia'],
-                    'razao_social'  => $validated['razao_social'],
-                    'cnpj'          => $validated['cnpj'],
-                    'status'        => true,
+                    'razao_social' => $validated['razao_social'],
+                    'cnpj' => $validated['cnpj'],
+                    'cnpj_verificado_em' => $approved ? now() : null,
+                    'status' => $approved,
+                    'registration_status' => $approved ? 'approved' : 'pending',
 
                     // Endereco (campos opcionais via ?? null)
-                    'cep'         => $validated['cep']         ?? null,
-                    'logradouro'  => $validated['logradouro']  ?? null,
-                    'numero'      => $validated['numero']      ?? null,
+                    'cep' => $validated['cep'] ?? null,
+                    'logradouro' => $validated['logradouro'] ?? null,
+                    'numero' => $validated['numero'] ?? null,
                     'complemento' => $validated['complemento'] ?? null,
-                    'bairro'      => $validated['bairro']      ?? null,
-                    'cidade'      => $validated['cidade']      ?? null,
-                    'estado'      => $validated['estado']      ?? null,
+                    'bairro' => $validated['bairro'] ?? null,
+                    'cidade' => $validated['cidade'] ?? null,
+                    'estado' => $validated['estado'] ?? null,
 
                     // Contato corporativo
                     'email_corporativo' => $validated['email_corporativo'] ?? null,
-                    'telefone'          => $validated['telefone']          ?? null,
+                    'telefone' => $validated['telefone'] ?? null,
+                    'dominio_corporativo' => $validated['dominio_corporativo'],
 
                     // Rastreabilidade: quem cadastrou a empresa
                     // (regra de negocio: bloquear ressubmissao com
                     // outro email para mesmo CNPJ - como CNPJ ja e
                     // unique, isso so vale para rastreamento/audit)
-                    'nome_administrador'  => $user->name,
+                    'nome_administrador' => $user->name,
                     'email_administrador' => $user->email,
+                    'email_recuperacao_secundario' => $validated['email_recuperacao_secundario'],
 
                     'observacoes' => $validated['observacoes'] ?? null,
                 ]);
@@ -170,10 +196,10 @@ class OnboardingController extends Controller
                 }
 
                 Log::info('Onboarding concluido', [
-                    'user_id'    => $user->id,
+                    'user_id' => $user->id,
                     'user_email' => $user->email,
                     'company_id' => $company->id,
-                    'cnpj'       => $company->cnpj,
+                    'cnpj' => $company->cnpj,
                 ]);
 
                 return $company->id;
@@ -181,11 +207,14 @@ class OnboardingController extends Controller
 
             return redirect()->route('dashboard')
                 ->with('success', 'Bem-vindo! Sua empresa foi cadastrada com sucesso.');
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (\Throwable $e) {
             Log::error('Falha no onboarding', [
                 'user_id' => $user->id,
                 'error' => $e->getMessage(),
             ]);
+
             return back()
                 ->withInput($request->except('cnpj'))
                 ->with('error', 'Não foi possível concluir o cadastro. Tente novamente.');

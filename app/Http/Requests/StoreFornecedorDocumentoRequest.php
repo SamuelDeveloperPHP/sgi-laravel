@@ -12,7 +12,7 @@ class StoreFornecedorDocumentoRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return auth()->check() && auth()->user()->hasPermissionTo('manage-fornecedores');
+        return auth()->check() && auth()->user()->can('manage-fornecedores');
     }
 
     /**

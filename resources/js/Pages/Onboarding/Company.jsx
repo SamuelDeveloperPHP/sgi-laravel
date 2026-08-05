@@ -30,6 +30,9 @@ export default function CompanyOnboarding({ userName, userEmail }) {
         // Contato
         email_corporativo: '',
         telefone: '',
+        dominio_corporativo: '',
+        email_administrador: userEmail,
+        email_recuperacao_secundario: '',
         // Observacoes
         observacoes: '',
     });
@@ -98,31 +101,34 @@ export default function CompanyOnboarding({ userName, userEmail }) {
                 setLookupState({
                     loading: false,
                     success: false,
-                    error: err.error || 'Não foi possível consultar o CNPJ. Preencha manualmente.',
+                    error: err.error || 'Não foi possível consultar o CNPJ agora.',
                 });
                 return;
             }
 
             const lookup = await response.json();
 
-            // Tenta extrair logradouro/numero/etc do endereço retornado
-            // (ReceitaWS devolve string concatenada; parsing best-effort)
             setData((prev) => ({
                 ...prev,
                 nome_fantasia: lookup.nome_fantasia || prev.nome_fantasia,
                 razao_social: lookup.razao_social || prev.razao_social,
                 email_corporativo: lookup.email || prev.email_corporativo,
+                dominio_corporativo: lookup.dominio_corporativo || prev.dominio_corporativo,
                 telefone: lookup.telefone ? formatPhoneMask(lookup.telefone) : prev.telefone,
                 cep: lookup.cep ? formatCepMask(lookup.cep) : prev.cep,
-                // endereco vem como string composta - usuario edita
-                logradouro: lookup.endereco?.split(',')[0]?.trim() || prev.logradouro,
+                logradouro: lookup.logradouro || prev.logradouro,
+                numero: lookup.numero || prev.numero,
+                complemento: lookup.complemento || prev.complemento,
+                bairro: lookup.bairro || prev.bairro,
+                cidade: lookup.cidade || prev.cidade,
+                estado: lookup.estado || prev.estado,
             }));
             setLookupState({ loading: false, success: true, error: null });
         } catch (e) {
             setLookupState({
                 loading: false,
                 success: false,
-                error: 'Erro de rede ao consultar CNPJ. Preencha manualmente.',
+                error: 'Erro de rede ao consultar o CNPJ.',
             });
         }
     };
@@ -180,7 +186,7 @@ export default function CompanyOnboarding({ userName, userEmail }) {
                         </header>
                         <div className="p-6 space-y-4">
                             <Field label="CNPJ" required error={errors.cnpj}
-                                   hint="Use o botão 'Buscar' para preencher automaticamente os dados pela Receita Federal.">
+                                   hint="Use o botão 'Buscar' para preencher automaticamente os dados pela APIBrasil.">
                                 <div className="flex gap-2">
                                     <input
                                         type="text"
@@ -307,14 +313,20 @@ export default function CompanyOnboarding({ userName, userEmail }) {
                             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
                                 Contato Corporativo
                             </h2>
-                            <span className="text-xs text-slate-500 ml-auto">Opcional</span>
                         </header>
                         <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <Field label="E-mail corporativo" error={errors.email_corporativo}>
+                            <Field label="Domínio corporativo" required error={errors.dominio_corporativo}
+                                   hint="Exemplo: engetecnica.com.br. Todos os e-mails devem usar exatamente este domínio.">
+                                <input type="text" value={data.dominio_corporativo}
+                                       onChange={(e) => setData('dominio_corporativo', e.target.value)}
+                                       placeholder="empresa.com.br"
+                                       className={inputClass} maxLength={253} required />
+                            </Field>
+                            <Field label="E-mail corporativo" required error={errors.email_corporativo}>
                                 <input type="email" value={data.email_corporativo}
                                        onChange={(e) => setData('email_corporativo', e.target.value)}
                                        placeholder="contato@empresa.com.br"
-                                       className={inputClass} maxLength={255} />
+                                       className={inputClass} maxLength={255} required />
                             </Field>
                             <Field label="Telefone" error={errors.telefone}>
                                 <input type="text" value={data.telefone}
@@ -333,7 +345,7 @@ export default function CompanyOnboarding({ userName, userEmail }) {
                                 Administrador do Sistema
                             </h2>
                         </header>
-                        <div className="p-6 space-y-2 text-sm text-slate-700 dark:text-slate-300">
+                        <div className="p-6 space-y-4 text-sm text-slate-700 dark:text-slate-300">
                             <p>
                                 Você será o <strong>Administrador</strong> desta empresa no sistema. Após o cadastro, você poderá criar outros usuários e atribuir permissões.
                             </p>
@@ -341,9 +353,15 @@ export default function CompanyOnboarding({ userName, userEmail }) {
                                 <div><span className="text-slate-500">Nome:</span> <strong>{userName}</strong></div>
                                 <div><span className="text-slate-500">E-mail:</span> <strong>{userEmail}</strong></div>
                             </div>
-                            <p className="text-xs text-slate-500">
-                                Estes dados ficam vinculados ao CNPJ <em>nome_administrador</em> e <em>email_administrador</em>. Impede que outra pessoa tente cadastrar a mesma empresa com outro e-mail.
-                            </p>
+                            <input type="hidden" name="email_administrador" value={data.email_administrador} />
+                            {errors.email_administrador && <p className="text-red-500 text-sm">{errors.email_administrador}</p>}
+                            <Field label="Segundo e-mail de recuperação" required error={errors.email_recuperacao_secundario}
+                                   hint="Deve ser diferente do administrador e usar o mesmo domínio da empresa.">
+                                <input type="email" value={data.email_recuperacao_secundario}
+                                       onChange={(e) => setData('email_recuperacao_secundario', e.target.value)}
+                                       placeholder="recuperacao@empresa.com.br"
+                                       className={inputClass} maxLength={255} required />
+                            </Field>
                         </div>
                     </section>
 
@@ -371,7 +389,7 @@ export default function CompanyOnboarding({ userName, userEmail }) {
                     <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 text-sm text-blue-900 dark:text-blue-200 flex items-start gap-3">
                         <Mail className="w-5 h-5 mt-0.5 flex-shrink-0" />
                         <div>
-                            <strong>Privacidade (LGPD):</strong> os dados públicos da Receita Federal podem ser consultados via API externa (ReceitaWS). Os dados que você confirmar são armazenados no nosso banco vinculados à sua conta. Você pode solicitar exportação ou exclusão a qualquer momento.
+                            <strong>Privacidade (LGPD):</strong> os dados públicos do CNPJ são consultados pela APIBrasil. Os dados confirmados ficam vinculados somente à empresa cadastrada.
                         </div>
                     </div>
 

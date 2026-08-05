@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'cnpj' => [
+        'cnpja_url' => env('CNPJA_PUBLIC_URL', 'https://open.cnpja.com/office'),
+        'brasilapi_url' => env('BRASILAPI_CNPJ_URL', 'https://brasilapi.com.br/api/cnpj/v1'),
+        'timeout' => env('CNPJ_LOOKUP_TIMEOUT', 8),
+    ],
+
 ];

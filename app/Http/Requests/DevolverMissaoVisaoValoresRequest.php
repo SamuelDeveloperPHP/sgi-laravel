@@ -8,7 +8,7 @@ class DevolverMissaoVisaoValoresRequest extends FormRequest
 {
     public function authorize()
     {
-        return auth()->check() && auth()->user()->hasPermissionTo('manage-missao-visao-valores');
+        return auth()->check() && auth()->user()->can('manage-missao-visao-valores');
     }
 
     public function rules()

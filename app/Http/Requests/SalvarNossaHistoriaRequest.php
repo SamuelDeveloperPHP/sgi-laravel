@@ -8,7 +8,9 @@ class SalvarNossaHistoriaRequest extends FormRequest
 {
     public function authorize()
     {
-        return auth()->check() && auth()->user()->hasPermissionTo('manage-nossa-historia');
+        $user = auth()->user();
+
+        return $user && ($user->is_master_admin || $user->can('manage-nossa-historia'));
     }
 
     public function rules()

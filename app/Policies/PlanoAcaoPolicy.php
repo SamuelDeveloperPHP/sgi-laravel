@@ -10,4 +10,5 @@ namespace App\Policies;
  */
 class PlanoAcaoPolicy extends AbstractTenantPolicy
 {
+    protected string $permissionResource = 'planosacao';
 }

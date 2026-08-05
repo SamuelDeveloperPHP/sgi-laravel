@@ -81,7 +81,7 @@ export default function AuthenticatedLayout({ header, children, fullWidth = fals
                 />
 
                 {/* Main content area */}
-                <div className="flex-1 flex flex-col min-w-0 lg:pl-64">
+                <div className="flex-1 flex flex-col min-w-0 lg:pl-64 print:pl-0">
                     
                     {/* Top Header */}
                     <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gentelella-border dark:border-slate-700 bg-white dark:bg-slate-800 px-4 shadow-none sm:gap-x-6 sm:px-6 lg:px-8 print:hidden transition-all duration-300">

@@ -1,8 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import { Save, ArrowLeft, Plus, Trash2, Upload } from 'lucide-react';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import ReactQuill from '@/Components/RichTextEditor';
 
 export default function Form({ auth, nc, isEdit }) {
     // Default structures
@@ -358,7 +357,7 @@ export default function Form({ auth, nc, isEdit }) {
                                                 {ev.foto instanceof File ? (
                                                     <img src={URL.createObjectURL(ev.foto)} alt="Preview" className="max-h-full max-w-full object-contain" />
                                                 ) : (ev.foto && typeof ev.foto === 'string') ? (
-                                                    <img src={`/storage/${ev.foto}`} alt="Saved Preview" className="max-h-full max-w-full object-contain" />
+                                                    <img src={route('nao-conformidades.evidencias.show', { naoConformidade: nc.id, index: i })} alt="Saved Preview" className="max-h-full max-w-full object-contain" />
                                                 ) : (
                                                     <div className="text-slate-400 flex flex-col items-center">
                                                         <Upload size={32} className="mb-2" />

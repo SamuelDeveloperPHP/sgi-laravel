@@ -26,6 +26,10 @@ class UpdateTarefaProjetoRequest extends FormRequest
             'dt_inicio'         => 'sometimes|nullable|date',
             'dt_fim'            => 'sometimes|nullable|date',
             'repetir'           => 'sometimes|nullable|string|max:45',
+            'tags'              => 'sometimes|nullable|array',
+            'tags.*'            => 'string|max:50',
+            'users'             => 'sometimes|nullable|array',
+            'users.*'           => ['integer', $this->tenantScopedExists('users')],
         ];
     }
 }

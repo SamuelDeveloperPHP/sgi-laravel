@@ -3,16 +3,19 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateAtaReuniaoRequest extends FormRequest
 {
     public function authorize()
     {
-        return auth()->check() && auth()->user()->hasPermissionTo('manage-atas-reuniao');
+        return auth()->check() && auth()->user()->can('manage-atas-reuniao');
     }
 
     public function rules()
     {
+        $companyId = $this->route('ata')->company_id;
+
         return [
             'data' => 'required|date',
             'hora_inicio' => 'required',
@@ -22,7 +25,7 @@ class UpdateAtaReuniaoRequest extends FormRequest
             'pautas' => 'required|string',
             'registro' => 'nullable|string',
             'participantes' => 'array',
-            'participantes.*' => 'exists:users,id',
+            'participantes.*' => [Rule::exists('users', 'id')->where('company_id', $companyId)],
         ];
     }
 }

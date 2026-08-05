@@ -70,6 +70,26 @@ class UserManagementByCompanyTest extends SecurityTestCase
     }
 
     /** @test */
+    public function usuario_comum_nao_acessa_nem_cria_usuarios(): void
+    {
+        $ordinary = User::factory()->create(['email_verified_at' => now()]);
+        $ordinary->forceFill(['company_id' => $this->companyA->id])->save();
+
+        $indexResponse = $this->actingAs($ordinary)->get('/admin/users');
+        $this->assertContains($indexResponse->status(), [302, 403]);
+
+        $storeResponse = $this->actingAs($ordinary)->post('/admin/users', [
+            'name' => 'Escalada',
+            'email' => 'escalada@empresa.com.br',
+            'password' => 'SuperSecret@123!',
+            'role' => 'Administrador',
+        ]);
+        $this->assertContains($storeResponse->status(), [302, 403]);
+
+        $this->assertDatabaseMissing('users', ['email' => 'escalada@empresa.com.br']);
+    }
+
+    /** @test */
     public function admin_da_empresa_nao_ve_usuarios_de_outra_empresa(): void
     {
         // Cria um usuario na empresa B (que admin A NAO deveria ver)
@@ -119,7 +139,7 @@ class UserManagementByCompanyTest extends SecurityTestCase
 
         $response = $this->actingAs($this->adminA)->get("/admin/users/{$userB->id}/edit");
 
-        $response->assertStatus(403);
+        $response->assertForbidden();
     }
 
     /** @test */
@@ -128,7 +148,7 @@ class UserManagementByCompanyTest extends SecurityTestCase
         $response = $this->actingAs($this->adminA)
             ->get("/admin/users/{$this->masterAdmin->id}/edit");
 
-        $response->assertStatus(403);
+        $response->assertForbidden();
     }
 
     /** @test */

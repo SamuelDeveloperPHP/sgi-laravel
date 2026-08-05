@@ -11,10 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('sts_tarefas_projeto', function (Blueprint $table) {
-            $table->foreignId('kanban_coluna_id')->nullable()->after('projeto_id')
-                  ->constrained('kanban_colunas')->nullOnDelete();
-        });
+        if (Schema::hasTable('sts_tarefas_projeto')) {
+            Schema::table('sts_tarefas_projeto', function (Blueprint $table) {
+                $table->foreignId('kanban_coluna_id')->nullable()->after('projeto_id')
+                      ->constrained('kanban_colunas')->nullOnDelete();
+            });
+        }
     }
 
     /**
@@ -22,9 +24,11 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('sts_tarefas_projeto', function (Blueprint $table) {
-            $table->dropForeign(['kanban_coluna_id']);
-            $table->dropColumn('kanban_coluna_id');
-        });
+        if (Schema::hasTable('sts_tarefas_projeto')) {
+            Schema::table('sts_tarefas_projeto', function (Blueprint $table) {
+                $table->dropForeign(['kanban_coluna_id']);
+                $table->dropColumn('kanban_coluna_id');
+            });
+        }
     }
 };

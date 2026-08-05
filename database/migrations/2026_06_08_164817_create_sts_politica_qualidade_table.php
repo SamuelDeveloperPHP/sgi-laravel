@@ -17,21 +17,21 @@ return new class extends Migration
             $table->string('status', 50)->default('rascunho'); // rascunho, aguardando_revisao, aguardando_aprovacao, aprovada, devolvida
             
             // Auditoria
-            $table->foreignId('elaborador_id')->nullable()->constrained('adms_usuarios')->nullOnDelete();
+            $table->foreignId('elaborador_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('data_elaboracao')->nullable();
             
-            $table->foreignId('revisor_id')->nullable()->constrained('adms_usuarios')->nullOnDelete();
+            $table->foreignId('revisor_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('data_revisao')->nullable();
             
-            $table->foreignId('aprovador_id')->nullable()->constrained('adms_usuarios')->nullOnDelete();
+            $table->foreignId('aprovador_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('data_aprovacao')->nullable();
             
             $table->string('hash_assinatura', 255)->nullable();
             
             $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
             
-            $table->foreignId('user_create')->nullable()->constrained('adms_usuarios')->nullOnDelete();
-            $table->foreignId('user_edit')->nullable()->constrained('adms_usuarios')->nullOnDelete();
+            $table->foreignId('user_create')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('user_edit')->nullable()->constrained('users')->nullOnDelete();
             
             $table->timestamps();
             $table->softDeletes();

@@ -222,7 +222,7 @@ export default function Show({ auth, nc }) {
                                                     <div key={i} className="flex flex-col items-center border border-black p-2">
                                                         <div className="h-48 w-full flex items-center justify-center mb-2 overflow-hidden">
                                                             {ev.foto ? (
-                                                                <img src={`/storage/${ev.foto}`} className="max-h-full max-w-full object-contain" alt="Evidência" />
+                                                                <img src={route('nao-conformidades.evidencias.show', { naoConformidade: nc.id, index: i })} className="max-h-full max-w-full object-contain" alt="Evidência" />
                                                             ) : (
                                                                 <span className="text-slate-400">Sem Imagem</span>
                                                             )}

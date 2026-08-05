@@ -9,4 +9,5 @@ namespace App\Policies;
  */
 class TarefaProjetoPolicy extends AbstractTenantPolicy
 {
+    protected string $permissionResource = 'tarefas';
 }

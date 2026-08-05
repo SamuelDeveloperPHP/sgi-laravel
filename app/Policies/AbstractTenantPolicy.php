@@ -26,6 +26,14 @@ use Illuminate\Database\Eloquent\Model;
 abstract class AbstractTenantPolicy
 {
     /**
+     * Identificador usado nas permissions Spatie deste recurso.
+     *
+     * Cada policy concreta deve definir explicitamente este valor. O valor
+     * vazio falha fechado: nenhum usuario comum recebe acesso por acidente.
+     */
+    protected string $permissionResource = '';
+
+    /**
      * Hook before(): permite que master admin bypasse TODAS as checagens.
      *
      * Retornando true aqui faz o Gate aceitar imediatamente, sem chamar
@@ -46,7 +54,7 @@ abstract class AbstractTenantPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->company_id !== null;
+        return $this->hasTenant($user) && $this->hasPermission($user, 'view');
     }
 
     /**
@@ -54,7 +62,7 @@ abstract class AbstractTenantPolicy
      */
     public function view(User $user, Model $model): bool
     {
-        return $this->sameTenant($user, $model);
+        return $this->sameTenant($user, $model) && $this->hasPermission($user, 'view');
     }
 
     /**
@@ -63,7 +71,7 @@ abstract class AbstractTenantPolicy
      */
     public function create(User $user): bool
     {
-        return $user->company_id !== null;
+        return $this->hasTenant($user) && $this->hasPermission($user, 'create');
     }
 
     /**
@@ -71,7 +79,7 @@ abstract class AbstractTenantPolicy
      */
     public function update(User $user, Model $model): bool
     {
-        return $this->sameTenant($user, $model);
+        return $this->sameTenant($user, $model) && $this->hasPermission($user, 'edit');
     }
 
     /**
@@ -79,7 +87,7 @@ abstract class AbstractTenantPolicy
      */
     public function delete(User $user, Model $model): bool
     {
-        return $this->sameTenant($user, $model);
+        return $this->sameTenant($user, $model) && $this->hasPermission($user, 'delete');
     }
 
     /**
@@ -87,7 +95,7 @@ abstract class AbstractTenantPolicy
      */
     public function restore(User $user, Model $model): bool
     {
-        return $this->sameTenant($user, $model);
+        return $this->sameTenant($user, $model) && $this->hasPermission($user, 'edit');
     }
 
     /**
@@ -109,6 +117,26 @@ abstract class AbstractTenantPolicy
         if ($user->company_id === null || $model->company_id === null) {
             return false;
         }
+
         return (int) $user->company_id === (int) $model->company_id;
+    }
+
+    protected function hasTenant(User $user): bool
+    {
+        return $user->company_id !== null;
+    }
+
+    /**
+     * Usa Gate::can em vez de hasPermissionTo diretamente. Alem de integrar
+     * roles e permissions, o Gate falha fechado quando a permission ainda nao
+     * existe no banco, evitando transformar uma negacao em erro HTTP 500.
+     */
+    protected function hasPermission(User $user, string $action): bool
+    {
+        if ($this->permissionResource === '') {
+            return false;
+        }
+
+        return $user->can($action.'-'.$this->permissionResource);
     }
 }

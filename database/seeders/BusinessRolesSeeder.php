@@ -138,7 +138,17 @@ class BusinessRolesSeeder extends Seeder
      */
     private function permissionsForPrefixes(array $names): array
     {
-        $existing = Permission::whereIn('name', $names)->pluck('name')->all();
+        // Cada permissao view-* tambem libera o item list-* equivalente no
+        // menu. O backend continua validando a acao especifica na policy.
+        $expanded = $names;
+        foreach ($names as $name) {
+            if (str_starts_with($name, 'view-')) {
+                $expanded[] = 'list-'.substr($name, 5);
+            }
+        }
+
+        $existing = Permission::whereIn('name', array_unique($expanded))->pluck('name')->all();
+
         return $existing;
     }
 }

@@ -36,7 +36,10 @@ abstract class Controller extends BaseController
             return; // Master admin bypass
         }
 
-        if (!$user->hasPermissionTo($permission)) {
+        // Gate::can falha fechado quando a permission ainda nao existe no
+        // banco. hasPermissionTo() lanca PermissionDoesNotExist e convertia
+        // uma simples negacao em erro HTTP 500.
+        if (! $user->can($permission)) {
             abort(403, 'Acesso não autorizado.');
         }
     }

@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('sts_naoconforme', function (Blueprint $table) {
-            $table->json('dados_origem')->nullable();
-            $table->json('acao_contencao_grid')->nullable();
-            $table->json('cinco_porques')->nullable();
-            $table->json('plano_acao_grid')->nullable();
-            $table->json('evidencias')->nullable();
-        });
+        if (Schema::hasTable('sts_naoconforme')) {
+            Schema::table('sts_naoconforme', function (Blueprint $table) {
+                $table->json('dados_origem')->nullable();
+                $table->json('acao_contencao_grid')->nullable();
+                $table->json('cinco_porques')->nullable();
+                $table->json('plano_acao_grid')->nullable();
+                $table->json('evidencias')->nullable();
+            });
+        }
     }
 
     /**
@@ -25,14 +27,16 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('sts_naoconforme', function (Blueprint $table) {
-            $table->dropColumn([
-                'dados_origem',
-                'acao_contencao_grid',
-                'cinco_porques',
-                'plano_acao_grid',
-                'evidencias'
-            ]);
-        });
+        if (Schema::hasTable('sts_naoconforme')) {
+            Schema::table('sts_naoconforme', function (Blueprint $table) {
+                $table->dropColumn([
+                    'dados_origem',
+                    'acao_contencao_grid',
+                    'cinco_porques',
+                    'plano_acao_grid',
+                    'evidencias'
+                ]);
+            });
+        }
     }
 };

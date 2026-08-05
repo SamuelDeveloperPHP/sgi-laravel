@@ -8,20 +8,24 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('sts_projetos', function (Blueprint $table) {
-            $table->unsignedBigInteger('responsavel_id')->nullable()->after('adms_usuario_id');
-            $table->string('privacidade')->default('Private')->after('responsavel_id');
-            $table->json('tags')->nullable()->after('privacidade');
+        if (Schema::hasTable('sts_projetos')) {
+            Schema::table('sts_projetos', function (Blueprint $table) {
+                $table->unsignedBigInteger('responsavel_id')->nullable()->after('adms_usuario_id');
+                $table->string('privacidade')->default('Private')->after('responsavel_id');
+                $table->json('tags')->nullable()->after('privacidade');
 
-            $table->foreign('responsavel_id')->references('id')->on('users')->onDelete('set null');
-        });
+                $table->foreign('responsavel_id')->references('id')->on('users')->onDelete('set null');
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('sts_projetos', function (Blueprint $table) {
-            $table->dropForeign(['responsavel_id']);
-            $table->dropColumn(['responsavel_id', 'privacidade', 'tags']);
-        });
+        if (Schema::hasTable('sts_projetos')) {
+            Schema::table('sts_projetos', function (Blueprint $table) {
+                $table->dropForeign(['responsavel_id']);
+                $table->dropColumn(['responsavel_id', 'privacidade', 'tags']);
+            });
+        }
     }
 };

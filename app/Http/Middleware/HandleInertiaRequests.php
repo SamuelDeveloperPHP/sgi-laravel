@@ -3,8 +3,10 @@
 namespace App\Http\Middleware;
 
 use App\Models\Company;
+use App\Models\FmEmpresaAcesso;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -52,14 +54,15 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'auth' => [
-                'user'   => $this->buildUserPayload($user),
-                'tenant' => $this->buildTenantPayload($user),
-                'notifications' => $user ? $user->unreadNotifications()->take(5)->get() : []
+                'user'             => $this->buildUserPayload($user),
+                'tenant'           => $this->buildTenantPayload($user),
+                'notifications'    => $user ? $user->unreadNotifications()->take(5)->get() : [],
+                'fm_empresa_access' => $this->hasFmAccess($user),
             ],
             'navigation' => $this->buildNavigation($user),
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
-                'error' => fn () => $request->session()->get('error'),
+                'error'   => fn () => $request->session()->get('error'),
                 'warning' => fn () => $request->session()->get('warning'),
             ]
         ];
@@ -88,10 +91,9 @@ class HandleInertiaRequests extends Middleware
 
         // Slugs visiveis APENAS para master admin
         $masterOnlySlugs = [
-            'view-projetos',
-            'manage-modules',
-            'manage-companies',
-            'iso-9001', // slug do modulo pai criado pelo ModuleSeeder
+            'list-projetos',
+            'list-modules',
+            'list-companies',
         ];
 
         $modules = \App\Models\Module::with('children')
@@ -102,12 +104,23 @@ class HandleInertiaRequests extends Middleware
             ->get();
 
         return $modules
-            ->filter(function ($mod) use ($isMasterAdmin, $masterOnlySlugs) {
+            ->filter(function ($mod) use ($user, $isMasterAdmin, $masterOnlySlugs) {
                 // Filtra modulos restritos a master admin
                 if (!$isMasterAdmin && in_array($mod->slug, $masterOnlySlugs, true)) {
                     return false;
                 }
-                return true;
+
+                if ($isMasterAdmin) {
+                    return true;
+                }
+
+                if (!$user) {
+                    return false;
+                }
+
+                // Pastas (ex.: ISO 9001) sao filtradas depois de montar os
+                // filhos. Modulos folha exigem a mesma permission do menu.
+                return $mod->children->isNotEmpty() || $user->can($mod->slug);
             })
             ->map(function ($mod) use ($user, $isMasterAdmin) {
                 return [
@@ -142,6 +155,12 @@ class HandleInertiaRequests extends Middleware
                             ];
                         })->values()->toArray(),
                 ];
+            })
+            ->filter(function (array $module) use ($isMasterAdmin) {
+                // Nao mostra agrupadores vazios para usuarios comuns.
+                return $isMasterAdmin
+                    || $module['href'] !== null
+                    || count($module['children']) > 0;
             })
             ->values()
             ->toArray();
@@ -191,5 +210,23 @@ class HandleInertiaRequests extends Middleware
             'nome_fantasia' => $company->nome_fantasia,
             'razao_social'  => $company->razao_social,
         ];
+    }
+
+    /**
+     * Verifica se o usuário (ou sua empresa) tem acesso ao gerenciador de arquivos.
+     * Master admin: sempre true.
+     * Outros: somente se a company estiver em fm_empresa_acesso.
+     */
+    protected function hasFmAccess(?User $user): bool
+    {
+        if (!$user) return false;
+        if ($user->is_master_admin) return true;
+        if (!$user->company_id) return false;
+
+        if (!\Illuminate\Support\Facades\Schema::hasTable('fm_empresa_acesso')) {
+            return false;
+        }
+
+        return DB::table('fm_empresa_acesso')->where('company_id', $user->company_id)->exists();
     }
 }

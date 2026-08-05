@@ -17,6 +17,10 @@ class Company extends Model
         'cnpj',
         'logo',
         'status',
+        'registration_status',
+        'registration_reviewed_at',
+        'registration_reviewed_by',
+        'registration_review_reason',
         // Endereco
         'cep',
         'logradouro',
@@ -28,6 +32,9 @@ class Company extends Model
         // Contato corporativo
         'email_corporativo',
         'telefone',
+        'dominio_corporativo',
+        'email_recuperacao_secundario',
+        'cnpj_verificado_em',
         // Administrador que cadastrou (rastreabilidade + LGPD)
         'nome_administrador',
         'email_administrador',
@@ -39,11 +46,23 @@ class Company extends Model
     protected $casts = [
         'criterios_avaliacao_fornecedor' => 'array',
         'status' => 'boolean',
+        'cnpj_verificado_em' => 'datetime',
+        'registration_reviewed_at' => 'datetime',
     ];
 
     public function users()
     {
         return $this->hasMany(User::class);
+    }
+
+    public function registrationReviews()
+    {
+        return $this->hasMany(CompanyRegistrationReview::class);
+    }
+
+    public function registrationReviewer()
+    {
+        return $this->belongsTo(User::class, 'registration_reviewed_by');
     }
 
     /**
