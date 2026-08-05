@@ -78,6 +78,9 @@ class ModuleSeeder extends Seeder
         foreach ($modules as $mod) {
             $children = $mod['children'] ?? [];
             unset($mod['children']);
+            $mod['default_access_policy'] ??= in_array($mod['slug'], ['list-projetos', 'list-companies', 'list-modules'], true)
+                ? 'private'
+                : 'public';
 
             $parent = \App\Models\Module::updateOrCreate(
                 ['name' => $mod['name']],
@@ -97,6 +100,7 @@ class ModuleSeeder extends Seeder
 
             foreach ($children as $child) {
                 $child['parent_id'] = $parent->id;
+                $child['default_access_policy'] ??= 'public';
                 $childModel = \App\Models\Module::updateOrCreate(
                     ['name' => $child['name']],
                     $child

@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\Company;
 use App\Models\FmEmpresaAcesso;
 use App\Models\User;
+use App\Support\ModuleAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Middleware;
@@ -110,17 +111,7 @@ class HandleInertiaRequests extends Middleware
                     return false;
                 }
 
-                if ($isMasterAdmin) {
-                    return true;
-                }
-
-                if (!$user) {
-                    return false;
-                }
-
-                // Pastas (ex.: ISO 9001) sao filtradas depois de montar os
-                // filhos. Modulos folha exigem a mesma permission do menu.
-                return $mod->children->isNotEmpty() || $user->can($mod->slug);
+                return $user && ModuleAccess::moduleVisibleToUser($user, $mod);
             })
             ->map(function ($mod) use ($user, $isMasterAdmin) {
                 return [
@@ -132,19 +123,7 @@ class HandleInertiaRequests extends Middleware
                         ->where('is_active', true)
                         ->where('is_visible_in_menu', true)
                         ->filter(function ($child) use ($user, $isMasterAdmin) {
-                            // Master admin ve todos os filhos
-                            if ($isMasterAdmin) {
-                                return true;
-                            }
-                            // Usuario sem login: sem filtro extra (so vai
-                            // chegar aqui se navigation for renderizado
-                            // em layout publico, o que nao deveria)
-                            if (!$user) {
-                                return true;
-                            }
-                            // Usuario logado: precisa ter a permission Spatie
-                            // que casa com o slug do modulo
-                            return $user->can($child->slug);
+                            return $user && ModuleAccess::moduleVisibleToUser($user, $child);
                         })
                         ->map(function ($child) {
                             return [

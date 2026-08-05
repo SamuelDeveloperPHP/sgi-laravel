@@ -36,6 +36,12 @@ export default function Index({ auth, modules, filters }) {
     };
 
     const lucideIcons = { LayoutDashboard, FileCheck, AlertTriangle, Target, Building, Users, Briefcase, Award };
+    const policyLabels = {
+        public: 'Publico',
+        trial_15: '15 dias',
+        trial_30: '30 dias',
+        private: 'Privado',
+    };
 
     const DynamicIcon = ({ iconName, className = "h-5 w-5" }) => {
         if (!iconName) return <div className={className} />;
@@ -184,6 +190,9 @@ export default function Index({ auth, modules, filters }) {
                                                     </span>
                                                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${module.is_visible_in_menu ? 'bg-blue-100 text-blue-800 border border-blue-200' : 'bg-gray-100 text-gray-800 border border-gray-200'}`}>
                                                         {module.is_visible_in_menu ? 'No Menu' : 'Oculto'}
+                                                    </span>
+                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800 border border-slate-200">
+                                                        {policyLabels[module.default_access_policy] || 'Publico'}
                                                     </span>
                                                 </div>
                                             </td>

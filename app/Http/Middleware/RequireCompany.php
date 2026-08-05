@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\ModuleAccess;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -67,6 +68,16 @@ class RequireCompany
         // sgi-laravel-access-rules item 1)
         if ($user->is_master_admin) {
             return $next($request);
+        }
+
+        if (ModuleAccess::expirePublicAccountIfNeeded($user, true)) {
+            auth()->guard('web')->logout();
+
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('login')
+                ->with('error', 'Seu cadastro publico temporario expirou e foi bloqueado.');
         }
 
         if ($user->company_id

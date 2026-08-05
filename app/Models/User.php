@@ -68,6 +68,10 @@ class User extends Authenticatable implements MustVerifyEmail
             'password' => 'hashed',
             'is_master_admin' => 'boolean',
             'is_active' => 'boolean',
+            'is_public_account' => 'boolean',
+            'public_access_started_at' => 'datetime',
+            'public_access_expires_at' => 'datetime',
+            'blocked_at' => 'datetime',
         ];
     }
 
