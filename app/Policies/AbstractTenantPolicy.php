@@ -3,6 +3,7 @@
 namespace App\Policies;
 
 use App\Models\User;
+use App\Support\ModuleAccess;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -137,6 +138,6 @@ abstract class AbstractTenantPolicy
             return false;
         }
 
-        return $user->can($action.'-'.$this->permissionResource);
+        return ModuleAccess::allowsPermission($user, $action.'-'.$this->permissionResource);
     }
 }

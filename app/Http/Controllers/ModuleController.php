@@ -66,6 +66,9 @@ class ModuleController extends Controller
             'url' => 'nullable|string|max:255',
             'icon' => 'nullable|string|max:255',
             'parent_id' => 'nullable|exists:modules,id',
+            'default_access_policy' => 'required|in:public,trial_15,trial_30,private',
+            'is_active' => 'boolean',
+            'is_visible_in_menu' => 'boolean',
             'order' => 'integer',
         ]);
 
@@ -114,6 +117,9 @@ class ModuleController extends Controller
             'url' => 'nullable|string|max:255',
             'icon' => 'nullable|string|max:255',
             'parent_id' => 'nullable|exists:modules,id',
+            'default_access_policy' => 'required|in:public,trial_15,trial_30,private',
+            'is_active' => 'boolean',
+            'is_visible_in_menu' => 'boolean',
             'order' => 'integer',
         ]);
 

@@ -26,14 +26,30 @@ class RegisterCompanyRequest extends FormRequest
             'email_corporativo' => strtolower(trim((string) $this->input('email_corporativo'))),
             'email_recuperacao_secundario' => strtolower(trim((string) $this->input('email_recuperacao_secundario'))),
             'estado' => strtoupper(trim((string) $this->input('estado'))),
+            'registration_type' => $this->input('registration_type') === 'public' ? 'public' : 'company',
         ]);
     }
 
     public function rules(): array
     {
+        if ($this->input('registration_type') === 'public') {
+            return [
+                'registration_type' => ['required', 'in:public'],
+                'name' => ['required', 'string', 'max:255'],
+                'email' => ['required', 'email:rfc', 'max:255', Rule::unique(User::class, 'email')],
+                'password' => ['required', 'confirmed', Password::defaults()],
+                'cnpj' => ['prohibited'],
+                'company_id' => ['prohibited'],
+                'is_master_admin' => ['prohibited'],
+                'is_active' => ['prohibited'],
+                'status' => ['prohibited'],
+            ];
+        }
+
         $domain = (string) $this->input('dominio_corporativo');
 
         return [
+            'registration_type' => ['required', 'in:company'],
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email:rfc', 'max:255', new CorporateEmail($domain), Rule::unique(User::class, 'email')],
             'password' => ['required', 'confirmed', Password::defaults()],

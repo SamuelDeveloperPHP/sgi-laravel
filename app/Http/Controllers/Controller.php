@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\ModuleAccess;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Routing\Controller as BaseController;
 
@@ -39,7 +40,7 @@ abstract class Controller extends BaseController
         // Gate::can falha fechado quando a permission ainda nao existe no
         // banco. hasPermissionTo() lanca PermissionDoesNotExist e convertia
         // uma simples negacao em erro HTTP 500.
-        if (! $user->can($permission)) {
+        if (! ModuleAccess::allowsPermission($user, $permission)) {
             abort(403, 'Acesso não autorizado.');
         }
     }
