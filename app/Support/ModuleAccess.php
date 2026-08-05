@@ -35,6 +35,10 @@ final class ModuleAccess
             return false;
         }
 
+        if (! CompanyModuleAccess::companyCanAccessModule($user->company_id, $module)) {
+            return false;
+        }
+
         if ($user->is_public_account) {
             return self::isReadPermission($permission)
                 && self::allowsPublicUserForModule($user, $module);
@@ -66,6 +70,10 @@ final class ModuleAccess
         }
 
         if ($module->default_access_policy === Module::ACCESS_PRIVATE) {
+            return false;
+        }
+
+        if (! CompanyModuleAccess::companyCanAccessModule($user->company_id, $module)) {
             return false;
         }
 
