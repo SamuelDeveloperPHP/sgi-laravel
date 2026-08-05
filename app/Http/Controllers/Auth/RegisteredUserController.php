@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\User;
 use App\Services\CnpjLookupService;
 use App\Services\CnpjValidator;
+use App\Support\CompanyModuleAccess;
 use App\Support\ModuleAccess;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\JsonResponse;
@@ -75,6 +76,7 @@ class RegisteredUserController extends Controller
                     'nome_administrador' => $validated['name'],
                     'email_administrador' => $validated['email'],
                 ]);
+                CompanyModuleAccess::syncDefaultsFor($company);
 
                 $user = User::create([
                     'name' => $validated['name'],
@@ -125,6 +127,7 @@ class RegisteredUserController extends Controller
                 'email_administrador' => $validated['email'],
                 'email_recuperacao_secundario' => $validated['email_recuperacao_secundario'],
             ]);
+            CompanyModuleAccess::syncDefaultsFor($company);
 
             $user = User::create([
                 'name' => $validated['name'],

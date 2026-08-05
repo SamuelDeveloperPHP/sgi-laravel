@@ -6,6 +6,7 @@ use App\Http\Requests\CompleteOnboardingRequest;
 use App\Models\Company;
 use App\Services\CnpjLookupService;
 use App\Services\CnpjValidator;
+use App\Support\CompanyModuleAccess;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -176,6 +177,7 @@ class OnboardingController extends Controller
 
                     'observacoes' => $validated['observacoes'] ?? null,
                 ]);
+                CompanyModuleAccess::syncDefaultsFor($company);
 
                 // Vincula usuário à empresa
                 $user->company_id = $company->id;

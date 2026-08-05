@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Company;
 use App\Rules\CorporateEmail;
+use App\Support\ModuleAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
@@ -376,7 +377,16 @@ class UserController extends Controller
     private function authorizeManagementAccess(): void
     {
         $user = auth()->user();
-        if (!$user || (!$user->is_master_admin && !$user->hasRole('Administrador'))) {
+
+        if (!$user) {
+            abort(403, 'Apenas o Administrador da empresa pode gerenciar acessos.');
+        }
+
+        if ($user->is_master_admin) {
+            return;
+        }
+
+        if (!$user->hasRole('Administrador') || !ModuleAccess::allowsPermission($user, 'view-users')) {
             abort(403, 'Apenas o Administrador da empresa pode gerenciar acessos.');
         }
     }
