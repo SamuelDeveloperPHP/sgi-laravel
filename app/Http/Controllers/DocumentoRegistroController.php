@@ -140,9 +140,11 @@ class DocumentoRegistroController extends Controller
 
     public function destroyRevisao(DestroyRevisaoDocumentoRegistroRequest $request, $id, $revisaoId)
     {
+        $documento = DocumentoRegistro::findOrFail($id);
+        $revisao = $documento->revisoes()->findOrFail($revisaoId);
+
         DB::beginTransaction();
         try {
-            $revisao = DocumentoRevisao::where('documento_id', $id)->findOrFail($revisaoId);
             $revisao->delete();
 
             Log::info("Ação destroyRevisao realizada pelo usuário " . auth()->user()->id);

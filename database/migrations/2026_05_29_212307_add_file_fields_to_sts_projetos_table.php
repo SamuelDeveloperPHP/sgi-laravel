@@ -11,10 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('sts_projetos', function (Blueprint $table) {
-            $table->string('imagem_capa')->nullable()->after('tags');
-            $table->json('arquivos_anexos')->nullable()->after('imagem_capa');
-        });
+        if (Schema::hasTable('sts_projetos')) {
+            Schema::table('sts_projetos', function (Blueprint $table) {
+                $table->string('imagem_capa')->nullable()->after('tags');
+                $table->json('arquivos_anexos')->nullable()->after('imagem_capa');
+            });
+        }
     }
 
     /**
@@ -22,8 +24,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('sts_projetos', function (Blueprint $table) {
-            $table->dropColumn(['imagem_capa', 'arquivos_anexos']);
-        });
+        if (Schema::hasTable('sts_projetos')) {
+            Schema::table('sts_projetos', function (Blueprint $table) {
+                $table->dropColumn(['imagem_capa', 'arquivos_anexos']);
+            });
+        }
     }
 };

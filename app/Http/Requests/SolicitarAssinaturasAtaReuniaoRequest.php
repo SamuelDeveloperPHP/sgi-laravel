@@ -8,7 +8,7 @@ class SolicitarAssinaturasAtaReuniaoRequest extends FormRequest
 {
     public function authorize()
     {
-        return auth()->check() && auth()->user()->hasPermissionTo('manage-atas-reuniao');
+        return auth()->check() && auth()->user()->can('manage-atas-reuniao');
     }
 
     public function rules()

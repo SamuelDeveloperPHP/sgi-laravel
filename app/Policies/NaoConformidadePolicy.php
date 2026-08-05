@@ -10,4 +10,5 @@ namespace App\Policies;
  */
 class NaoConformidadePolicy extends AbstractTenantPolicy
 {
+    protected string $permissionResource = 'naoconformidades';
 }

@@ -39,6 +39,8 @@ class ModuleSeeder extends Seeder
                     ['name' => 'Auditorias', 'slug' => 'list-auditorias', 'route_name' => 'auditorias.index', 'order' => 10],
                     ['name' => 'Não Conformidades', 'slug' => 'list-naoconformidades', 'route_name' => 'nao-conformidades.index', 'order' => 11],
                     ['name' => 'Planos de Ação', 'slug' => 'list-planosacao', 'route_name' => 'planos-acao.index', 'order' => 12],
+                    ['name' => 'Mapa de Risco', 'slug' => 'list-mapas-risco', 'route_name' => 'mapas-risco.index', 'order' => 13],
+                    ['name' => 'Analise SWOT', 'slug' => 'list-analise-swot', 'route_name' => 'analise-swot.index', 'order' => 14],
                 ]
             ],
             [

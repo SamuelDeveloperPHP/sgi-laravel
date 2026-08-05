@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasColumn('sts_pa', 'objetivo_qualidade_id')) {
+        if (Schema::hasTable('sts_pa') && !Schema::hasColumn('sts_pa', 'objetivo_qualidade_id')) {
             Schema::table('sts_pa', function (Blueprint $table) {
                 $table->unsignedBigInteger('objetivo_qualidade_id')->nullable()->after('id');
             });
@@ -23,8 +23,12 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('sts_pa', function (Blueprint $table) {
-            //
-        });
+        if (Schema::hasTable('sts_pa')) {
+            Schema::table('sts_pa', function (Blueprint $table) {
+                if (Schema::hasColumn('sts_pa', 'objetivo_qualidade_id')) {
+                    $table->dropColumn('objetivo_qualidade_id');
+                }
+            });
+        }
     }
 };

@@ -6,9 +6,16 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class StoreControleCalibracaoRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        if ($this->user() && !$this->user()->is_master_admin) {
+            $this->merge(['company_id' => $this->user()->company_id]);
+        }
+    }
+
     public function authorize()
     {
-        return auth()->check() && auth()->user()->hasPermissionTo('manage-controle-calibracoes');
+        return auth()->check() && auth()->user()->can('manage-controle-calibracoes');
     }
 
     public function rules()

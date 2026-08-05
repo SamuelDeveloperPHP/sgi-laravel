@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('fornecedores', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('company_id')->constrained('sts_companies')->onDelete('cascade');
+            $table->foreignId('company_id')->constrained('companies')->onDelete('cascade');
             
             // Dados Básicos
             $table->string('razao_social');

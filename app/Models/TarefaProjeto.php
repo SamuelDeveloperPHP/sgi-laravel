@@ -48,6 +48,11 @@ class TarefaProjeto extends Model
         'projeto_id',
         'kanban_coluna_id',
         'repetir',
+        'tags',
+    ];
+
+    protected $casts = [
+        'tags' => 'array',
     ];
 
     public function projeto()
@@ -73,5 +78,47 @@ class TarefaProjeto extends Model
     public function checklists()
     {
         return $this->hasMany(TarefaProjetoChecklist::class, 'tarefa_projeto_id')->orderBy('ordem', 'asc');
+    }
+
+    public function users()
+    {
+        return $this->belongsToMany(User::class, 'tarefa_projeto_user', 'tarefa_projeto_id', 'user_id');
+    }
+
+    public function getRelevanciaAttribute($value)
+    {
+        switch ($value) {
+            case 3:
+                return 'high';
+            case 1:
+                return 'low';
+            case 2:
+            default:
+                return 'medium';
+        }
+    }
+
+    public function setRelevanciaAttribute($value)
+    {
+        switch ($value) {
+            case 'high':
+                $this->attributes['relevancia'] = 3;
+                break;
+            case 'low':
+                $this->attributes['relevancia'] = 1;
+                break;
+            case 'medium':
+            default:
+                $this->attributes['relevancia'] = 2;
+                break;
+        }
+    }
+
+    public function getStatusAttribute($value)
+    {
+        if ($value === 'STATUS_ACTIVE') {
+            return 'pending';
+        }
+        return $value ?: 'pending';
     }
 }

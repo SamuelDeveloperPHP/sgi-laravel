@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import RichTextEditor from '@/Components/RichTextEditor';
 import { Head, useForm } from '@inertiajs/react';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
-import { Save, History } from 'lucide-react';
+import { History, Pencil, Printer, Save, Trash2 } from 'lucide-react';
 
-export default function Index({ auth, historia, companies, currentCompanyId }) {
+export default function Index({ auth, historia, companies, company, currentCompanyId }) {
     const userPermissions = auth.user?.permissions || [];
     const canManage = auth.user?.is_master_admin || userPermissions.includes('manage-nossa-historia');
-
     const [isEditing, setIsEditing] = useState(!historia?.conteudo);
 
     const { data, setData, post, processing, errors } = useForm({
@@ -16,49 +14,47 @@ export default function Index({ auth, historia, companies, currentCompanyId }) {
         company_id: currentCompanyId || '',
     });
 
-    const modules = {
-        toolbar: [
-            [{ 'header': [1, 2, 3, false] }],
-            ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-            [{'list': 'ordered'}, {'list': 'bullet'}, {'indent': '-1'}, {'indent': '+1'}],
-            ['link', 'image'],
-            ['clean']
-        ],
-    };
-
-    const handleSave = (e) => {
-        e.preventDefault();
-        post(route('nossa-historia.salvar'), { 
+    const handleSave = (event) => {
+        event.preventDefault();
+        post(route('nossa-historia.salvar'), {
             preserveScroll: true,
-            onSuccess: () => setIsEditing(false)
+            onSuccess: () => setIsEditing(false),
         });
     };
 
     const handleDelete = () => {
-        if (confirm('Tem certeza que deseja excluir o conteúdo?')) {
+        if (window.confirm('Tem certeza que deseja excluir o conteúdo?')) {
             setData('conteudo', '');
             post(route('nossa-historia.salvar'), { preserveScroll: true });
         }
     };
 
+    const handlePrint = () => window.print();
+    const companyName = company?.razao_social || company?.nome_fantasia || 'Empresa';
+    const printedAt = new Intl.DateTimeFormat('pt-BR', {
+        dateStyle: 'short',
+        timeStyle: 'short',
+    }).format(new Date());
+
     return (
         <AuthenticatedLayout
             user={auth.user}
             header={
-                <div className="flex justify-between items-center">
-                    <h2 className="font-semibold text-xl text-slate-800 dark:text-slate-200 leading-tight">Nossa História</h2>
-                    {companies && companies.length > 0 && (
+                <div className="flex items-center justify-between gap-4">
+                    <h2 className="text-xl font-semibold leading-tight text-slate-800 dark:text-slate-200">Nossa História</h2>
+                    {companies?.length > 0 && (
                         <div className="flex items-center gap-2">
                             <span className="text-sm text-slate-500">Empresa:</span>
                             <select
-                                className="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm text-sm"
+                                aria-label="Empresa"
+                                className="rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
                                 value={currentCompanyId}
-                                onChange={(e) => {
-                                    window.location.href = route('nossa-historia.index', { company_id: e.target.value });
+                                onChange={(event) => {
+                                    window.location.href = route('nossa-historia.index', { company_id: event.target.value });
                                 }}
                             >
-                                {companies.map(c => (
-                                    <option key={c.id} value={c.id}>{c.nome_fantasia}</option>
+                                {companies.map((item) => (
+                                    <option key={item.id} value={item.id}>{item.nome_fantasia}</option>
                                 ))}
                             </select>
                         </div>
@@ -68,82 +64,91 @@ export default function Index({ auth, historia, companies, currentCompanyId }) {
         >
             <Head title="Nossa História" />
 
-            <div className="py-12">
-                <div className="w-full sm:px-6 lg:px-8 space-y-6">
-                    <div className="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                        <div className="flex justify-between items-center mb-6">
-                            <div className="flex items-center gap-2">
-                                <History className="h-6 w-6 text-indigo-500" />
-                                <h3 className="text-lg font-medium text-slate-900 dark:text-white">
-                                    A História da Empresa
-                                </h3>
-                            </div>
+            <style>{`
+                @page { size: A4; margin: 15mm; }
+                @media print {
+                    html, body { background: #fff !important; color: #111827 !important; }
+                    .nossa-historia-shell { padding: 0 !important; }
+                    .nossa-historia-card { border: 0 !important; box-shadow: none !important; padding: 0 !important; }
+                    .nossa-historia-document { width: auto !important; min-height: auto !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; }
+                    .nossa-historia-document a { color: #111827 !important; text-decoration: underline; }
+                }
+            `}</style>
+
+            <div className="nossa-historia-shell w-full px-4 py-8 sm:px-6 lg:px-8">
+                <div className="nossa-historia-card mx-auto max-w-6xl rounded-lg bg-white p-6 shadow-sm dark:bg-slate-800">
+                    <div className="mb-6 flex flex-wrap items-center justify-between gap-3 print:hidden">
+                        <div className="flex items-center gap-2">
+                            <History className="h-6 w-6 text-emerald-500" />
+                            <h3 className="text-lg font-medium text-slate-900 dark:text-white">A História da Empresa</h3>
                         </div>
 
-                        <style>{`
-                            .ql-editor {
-                                min-height: 500px;
-                            }
-                        `}</style>
-
-                        {isEditing ? (
-                            <form onSubmit={handleSave} className="space-y-4">
-                                <ReactQuill 
-                                    theme="snow" 
-                                    value={data.conteudo} 
-                                    onChange={(val) => setData('conteudo', val)}
-                                    modules={modules}
-                                    className="bg-white dark:text-slate-900"
-                                />
-                                {errors.conteudo && <p className="text-sm text-red-600 mt-1">{errors.conteudo}</p>}
-                                
-                                <div className="flex justify-end pt-4 gap-2">
-                                    {historia?.conteudo && (
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setData('conteudo', historia.conteudo);
-                                                setIsEditing(false);
-                                            }}
-                                            className="inline-flex items-center px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-slate-50 transition"
-                                        >
-                                            Cancelar
-                                        </button>
-                                    )}
-                                    <button
-                                        type="submit"
-                                        disabled={processing}
-                                        className="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 disabled:opacity-25 transition"
-                                    >
-                                        <Save className="h-4 w-4 mr-2" />
-                                        Salvar Nossa História
-                                    </button>
-                                </div>
-                            </form>
-                        ) : (
-                            <div className="space-y-4">
-                                <div className="prose max-w-none dark:prose-invert min-h-[500px]" dangerouslySetInnerHTML={{ __html: historia?.conteudo || '<p class="text-slate-500">Nenhum conteúdo definido ainda.</p>' }} />
-                                
+                        {!isEditing && historia?.conteudo && (
+                            <div className="flex flex-wrap gap-2">
+                                <button type="button" onClick={handlePrint} className="inline-flex items-center rounded-md bg-slate-700 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-slate-800">
+                                    <Printer className="mr-2 h-4 w-4" />
+                                    Imprimir
+                                </button>
                                 {canManage && (
-                                    <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-700">
-                                        <button
-                                            onClick={() => setIsEditing(true)}
-                                            className="inline-flex items-center px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 rounded-md font-semibold text-xs text-slate-700 dark:text-slate-300 uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-700 transition"
-                                        >
+                                    <>
+                                        <button type="button" onClick={() => setIsEditing(true)} className="inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-widest text-slate-700 transition hover:bg-slate-50 dark:border-slate-500 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700">
+                                            <Pencil className="mr-2 h-4 w-4" />
                                             Editar
                                         </button>
-                                        <button
-                                            onClick={handleDelete}
-                                            disabled={processing}
-                                            className="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 disabled:opacity-25 transition"
-                                        >
+                                        <button type="button" onClick={handleDelete} disabled={processing} className="inline-flex items-center rounded-md bg-red-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-red-700 disabled:opacity-25">
+                                            <Trash2 className="mr-2 h-4 w-4" />
                                             Excluir
                                         </button>
-                                    </div>
+                                    </>
                                 )}
                             </div>
                         )}
                     </div>
+
+                    {isEditing ? (
+                        <form onSubmit={handleSave} className="space-y-4 print:hidden">
+                            <RichTextEditor
+                                value={data.conteudo}
+                                onChange={(html) => setData('conteudo', html)}
+                            />
+                            {errors.conteudo && <p className="mt-1 text-sm text-red-600">{errors.conteudo}</p>}
+
+                            <div className="flex justify-end gap-2 pt-4">
+                                {historia?.conteudo && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setData('conteudo', historia.conteudo);
+                                            setIsEditing(false);
+                                        }}
+                                        className="rounded-md border border-slate-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-widest text-slate-700 transition hover:bg-slate-50"
+                                    >
+                                        Cancelar
+                                    </button>
+                                )}
+                                <button type="submit" disabled={processing} className="inline-flex items-center rounded-md bg-emerald-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-emerald-700 disabled:opacity-25">
+                                    <Save className="mr-2 h-4 w-4" />
+                                    Salvar Nossa História
+                                </button>
+                            </div>
+                        </form>
+                    ) : (
+                        <article className="nossa-historia-document mx-auto min-h-[297mm] w-full max-w-[210mm] bg-white px-[15mm] py-[12mm] text-slate-900 shadow-lg print:min-h-0">
+                            <header className="mb-10 border-b border-slate-300 pb-5 text-center">
+                                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-700">{companyName}</p>
+                                <h1 className="mt-3 text-3xl font-bold text-slate-900">Nossa História</h1>
+                            </header>
+
+                            <div
+                                className="rich-text-output max-w-none text-justify"
+                                dangerouslySetInnerHTML={{ __html: historia?.conteudo || '<p>Nenhum conteúdo definido ainda.</p>' }}
+                            />
+
+                            <footer className="mt-16 border-t border-slate-300 pt-4 text-center text-xs text-slate-500">
+                                Documento impresso em {printedAt}
+                            </footer>
+                        </article>
+                    )}
                 </div>
             </div>
         </AuthenticatedLayout>

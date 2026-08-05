@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm, usePage } from '@inertiajs/react';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import { Head, useForm } from '@inertiajs/react';
+import RichTextEditor from '@/Components/RichTextEditor';
 import { 
     Save, 
     Send, 
@@ -52,16 +51,6 @@ export default function Index({ auth, mvv, companies, users, currentCompanyId })
         return badges[status] || badges['rascunho'];
     };
 
-    const modules = {
-        toolbar: [
-            [{ 'header': [1, 2, 3, false] }],
-            ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-            [{'list': 'ordered'}, {'list': 'bullet'}, {'indent': '-1'}, {'indent': '+1'}],
-            ['link', 'image'],
-            ['clean']
-        ],
-    };
-
     const handleAction = (routeUrl) => {
         post(routeUrl, { 
             preserveScroll: true,
@@ -81,7 +70,7 @@ export default function Index({ auth, mvv, companies, users, currentCompanyId })
             user={auth.user}
             header={
                 <div className="flex justify-between items-center">
-                    <h2 className="font-semibold text-xl text-slate-800 dark:text-slate-200 leading-tight">Política da Qualidade</h2>
+                    <h2 className="font-semibold text-xl text-slate-800 dark:text-slate-200 leading-tight">Missão, Visão e Valores</h2>
                     {companies && companies.length > 0 && (
                         <div className="flex items-center gap-2">
                             <span className="text-sm text-slate-500">Empresa:</span>
@@ -101,7 +90,7 @@ export default function Index({ auth, mvv, companies, users, currentCompanyId })
                 </div>
             }
         >
-            <Head title="Política da Qualidade" />
+            <Head title="Missão, Visão e Valores" />
 
             <div className="py-12">
                 <div className="w-full sm:px-6 lg:px-8 space-y-6">
@@ -133,19 +122,11 @@ export default function Index({ auth, mvv, companies, users, currentCompanyId })
                         
                         {/* Editor Principal */}
                         <div className="lg:col-span-2 bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                            <style>{`
-                                .ql-editor {
-                                    min-height: 500px;
-                                }
-                            `}</style>
                             {isEditing ? (
                                 <div className="space-y-4">
-                                    <ReactQuill 
-                                        theme="snow" 
+                                    <RichTextEditor
                                         value={data.conteudo} 
                                         onChange={(val) => setData('conteudo', val)}
-                                        modules={modules}
-                                        className="bg-white dark:text-slate-900"
                                     />
                                     {errors.conteudo && <p className="text-sm text-red-600 mt-1">{errors.conteudo}</p>}
                                     
@@ -207,7 +188,7 @@ export default function Index({ auth, mvv, companies, users, currentCompanyId })
                                 </div>
                             ) : (
                                 <div className="space-y-4">
-                                    <div className="prose max-w-none dark:prose-invert min-h-[500px]" dangerouslySetInnerHTML={{ __html: mvv.conteudo || '<p class="text-slate-500">Nenhum conteúdo definido ainda.</p>' }} />
+                                    <div className="rich-text-output max-w-none min-h-[500px]" dangerouslySetInnerHTML={{ __html: mvv.conteudo || '<p class="text-slate-500">Nenhum conteúdo definido ainda.</p>' }} />
                                     
                                     {canManage && (isRascunho || isAprovada) && (
                                         <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-700">
@@ -295,7 +276,7 @@ export default function Index({ auth, mvv, companies, users, currentCompanyId })
                                     </div>
                                     
                                     {isAguardandoRevisao && mvv.elaborador_id === auth.user.id && (
-                                        <p className="mt-3 text-xs text-red-500 font-medium">Atenção: O elaborador não pode revisar a própria política.</p>
+                                        <p className="mt-3 text-xs text-red-500 font-medium">Atenção: O elaborador não pode revisar o próprio documento.</p>
                                     )}
                                 </div>
                             )}

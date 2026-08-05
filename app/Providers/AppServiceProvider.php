@@ -2,11 +2,22 @@
 
 namespace App\Providers;
 
+use App\Models\AuditoriaInterna;
+use App\Models\Company;
+use App\Models\KanbanColuna;
+use App\Models\MapaRisco;
+use App\Models\NaoConformidade;
+use App\Models\PlanoAcao;
+use App\Models\Projeto;
+use App\Models\TarefaProjeto;
+use App\Models\User;
+use App\Observers\MasterAdminAuditObserver;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Vite;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -27,24 +38,32 @@ class AppServiceProvider extends ServiceProvider
         Vite::prefetch(concurrency: 3);
         Schema::defaultStringLength(191);
 
+        // O administrador master pode executar qualquer habilidade, mas
+        // continua sujeito às regras de negócio e ao company_id escolhido
+        // dentro dos controllers e FormRequests.
+        Gate::before(function (User $user, string $ability): ?bool {
+            return $user->is_master_admin ? true : null;
+        });
+
         // Auditoria de ações de master admin em models tenant-scoped.
         // Por que: master admin bypassa o TenantScope (vê dados de todas
         // as empresas). Toda operação CRUD deve ser rastreável para
         // conformidade ISO 9001/14001/45001 e investigação de incidentes.
         $tenantScopedModels = [
-            \App\Models\NaoConformidade::class,
-            \App\Models\PlanoAcao::class,
-            \App\Models\AuditoriaInterna::class,
-            \App\Models\Projeto::class,
-            \App\Models\TarefaProjeto::class,
-            \App\Models\KanbanColuna::class,
+            NaoConformidade::class,
+            PlanoAcao::class,
+            AuditoriaInterna::class,
+            Projeto::class,
+            TarefaProjeto::class,
+            KanbanColuna::class,
             // Company e User não usam Tenantable mas são alvos sensíveis
             // a operações de master admin — também rastreados.
-            \App\Models\Company::class,
-            \App\Models\User::class,
+            Company::class,
+            User::class,
+            MapaRisco::class,
         ];
         foreach ($tenantScopedModels as $modelClass) {
-            $modelClass::observe(\App\Observers\MasterAdminAuditObserver::class);
+            $modelClass::observe(MasterAdminAuditObserver::class);
         }
 
         $this->configureRateLimiters();
@@ -63,8 +82,9 @@ class AppServiceProvider extends ServiceProvider
         // brute-force sem afetar outros usuários do mesmo IP corporativo.
         RateLimiter::for('login', function (Request $request) {
             $email = (string) $request->input('email', '');
+
             return [
-                Limit::perMinute(5)->by(strtolower($email) . '|' . $request->ip()),
+                Limit::perMinute(5)->by(strtolower($email).'|'.$request->ip()),
                 Limit::perMinute(20)->by($request->ip()), // teto por IP
             ];
         });
@@ -74,10 +94,16 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(2)->by($request->ip());
         });
 
+        // Mantém o limite abaixo da cota pública do provedor primário.
+        RateLimiter::for('cnpj-lookup', function (Request $request) {
+            return Limit::perMinute(4)->by($request->ip());
+        });
+
         // Password reset request: 3/hora por email + 10/hora por IP.
         // Previne enumeração de usuários e spam de e-mails.
         RateLimiter::for('password-reset', function (Request $request) {
             $email = (string) $request->input('email', '');
+
             return [
                 Limit::perHour(3)->by(strtolower($email)),
                 Limit::perHour(10)->by($request->ip()),

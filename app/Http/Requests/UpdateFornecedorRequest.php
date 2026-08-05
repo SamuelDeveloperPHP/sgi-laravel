@@ -4,15 +4,23 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateFornecedorRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        if ($this->user() && !$this->user()->is_master_admin) {
+            $this->merge(['company_id' => $this->user()->company_id]);
+        }
+    }
+
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        return auth()->check() && auth()->user()->hasPermissionTo('manage-fornecedores');
+        return auth()->check() && auth()->user()->can('manage-fornecedores');
     }
 
     /**
@@ -23,7 +31,13 @@ class UpdateFornecedorRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'company_id' => 'required|exists:companies,id',
+            'company_id' => [
+                'required',
+                Rule::exists('companies', 'id')->when(
+                    !$this->user()?->is_master_admin,
+                    fn ($query) => $query->where('id', $this->user()->company_id)
+                ),
+            ],
             'razao_social' => 'required|string|max:255',
             'cnpj_cpf' => 'nullable|string|max:20',
             'categoria' => 'nullable|string|max:255',

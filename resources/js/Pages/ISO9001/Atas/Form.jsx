@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, Link } from '@inertiajs/react';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import ReactQuill from '@/Components/RichTextEditor';
 import { Save, ArrowLeft } from 'lucide-react';
 import Select from 'react-select';
 

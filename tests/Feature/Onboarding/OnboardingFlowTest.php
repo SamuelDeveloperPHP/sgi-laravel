@@ -4,6 +4,8 @@ namespace Tests\Feature\Onboarding;
 
 use App\Models\Company;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Spatie\Permission\Models\Role;
 use Tests\Feature\Security\SecurityTestCase;
 
@@ -28,6 +30,24 @@ use Tests\Feature\Security\SecurityTestCase;
  */
 class OnboardingFlowTest extends SecurityTestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Cache::flush();
+        config([
+            'services.cnpj.cnpja_url' => 'https://open.cnpja.test/office',
+            'services.cnpj.brasilapi_url' => 'https://brasilapi.test/api/cnpj/v1',
+        ]);
+        Http::fake([
+            'open.cnpja.test/*' => Http::response([
+                'alias' => 'Empresa Teste',
+                'company' => ['name' => 'Empresa Teste LTDA'],
+                'status' => ['id' => 2, 'text' => 'Ativa'],
+                'emails' => [['address' => 'contato@example.com']],
+            ]),
+        ]);
+    }
+
     /** @test */
     public function usuario_sem_company_e_redirecionado_para_onboarding(): void
     {
@@ -95,11 +115,11 @@ class OnboardingFlowTest extends SecurityTestCase
         $user = $this->createVerifiedUser(['company_id' => null]);
         $this->actingAs($user);
 
-        $response = $this->post(route('onboarding.complete'), [
+        $response = $this->post(route('onboarding.complete'), $this->validPayload($user, [
             'nome_fantasia' => 'Teste Indústria',
             'razao_social' => 'Teste Indústria LTDA',
             'cnpj' => '11222333000181', // CNPJ valido
-        ]);
+        ]));
 
         $response->assertRedirect(route('dashboard'));
 
@@ -131,6 +151,52 @@ class OnboardingFlowTest extends SecurityTestCase
     }
 
     /** @test */
+    public function onboarding_rejeita_cpf_mesmo_quando_valido(): void
+    {
+        $user = $this->createVerifiedUser(['company_id' => null]);
+
+        $response = $this->actingAs($user)->post(route('onboarding.complete'), [
+            'nome_fantasia' => 'Pessoa Fisica',
+            'razao_social' => 'Pessoa Fisica',
+            'cnpj' => '52998224725', // CPF valido, mas nunca aceito neste fluxo
+        ]);
+
+        $response->assertSessionHasErrors('cnpj');
+        $this->assertNull($user->fresh()->company_id);
+    }
+
+    /** @test */
+    public function onboarding_rejeita_email_de_outro_dominio(): void
+    {
+        $user = $this->createVerifiedUser(['company_id' => null]);
+        $payload = $this->validPayload($user, [
+            'dominio_corporativo' => 'empresa.com.br',
+            'email_corporativo' => 'contato@empresa.com.br',
+            'email_administrador' => $user->email,
+            'email_recuperacao_secundario' => 'recuperacao@empresa.com.br',
+        ]);
+
+        $response = $this->actingAs($user)->post(route('onboarding.complete'), $payload);
+
+        $response->assertSessionHasErrors('email_administrador');
+        $this->assertNull($user->fresh()->company_id);
+    }
+
+    /** @test */
+    public function onboarding_exige_recuperacao_diferente_do_administrador(): void
+    {
+        $user = $this->createVerifiedUser(['company_id' => null]);
+        $payload = $this->validPayload($user, [
+            'email_recuperacao_secundario' => $user->email,
+        ]);
+
+        $response = $this->actingAs($user)->post(route('onboarding.complete'), $payload);
+
+        $response->assertSessionHasErrors('email_recuperacao_secundario');
+        $this->assertNull($user->fresh()->company_id);
+    }
+
+    /** @test */
     public function onboarding_rejeita_cnpj_duplicado(): void
     {
         // Empresa ja existente com CNPJ
@@ -155,11 +221,11 @@ class OnboardingFlowTest extends SecurityTestCase
         $user = $this->createVerifiedUser(['company_id' => $existingCompany->id]);
         $this->actingAs($user);
 
-        $response = $this->post(route('onboarding.complete'), [
+        $response = $this->post(route('onboarding.complete'), $this->validPayload($user, [
             'nome_fantasia' => 'Tentativa de troca',
             'razao_social' => 'Tentativa LTDA',
             'cnpj' => '11222333000181',
-        ]);
+        ]));
 
         $response->assertRedirect(route('dashboard'));
 
@@ -217,11 +283,11 @@ class OnboardingFlowTest extends SecurityTestCase
         $user = $this->createVerifiedUser(['company_id' => null]);
         $this->actingAs($user);
 
-        $this->post(route('onboarding.complete'), [
+        $this->post(route('onboarding.complete'), $this->validPayload($user, [
             'nome_fantasia' => 'Empresa com Role',
             'razao_social' => 'Role LTDA',
             'cnpj' => '11222333000181',
-        ]);
+        ]));
 
         $user->refresh();
         $this->assertTrue($user->hasRole('Administrador'));
@@ -233,33 +299,33 @@ class OnboardingFlowTest extends SecurityTestCase
         $user = $this->createVerifiedUser(['company_id' => null]);
         $this->actingAs($user);
 
-        $response = $this->post(route('onboarding.complete'), [
-            'nome_fantasia'     => 'Tech Solutions',
-            'razao_social'      => 'Tech Solutions LTDA',
-            'cnpj'              => '11222333000181',
-            'cep'               => '01310-100',
-            'logradouro'        => 'Av. Paulista',
-            'numero'            => '1000',
-            'complemento'       => 'Sala 200',
-            'bairro'            => 'Bela Vista',
-            'cidade'            => 'Sao Paulo',
-            'estado'            => 'SP',
-            'email_corporativo' => 'contato@techsolutions.com.br',
-            'telefone'          => '(11) 99999-9999',
-            'observacoes'       => 'Empresa de TI',
-        ]);
+        $response = $this->post(route('onboarding.complete'), $this->validPayload($user, [
+            'nome_fantasia' => 'Tech Solutions',
+            'razao_social' => 'Tech Solutions LTDA',
+            'cnpj' => '11222333000181',
+            'cep' => '01310-100',
+            'logradouro' => 'Av. Paulista',
+            'numero' => '1000',
+            'complemento' => 'Sala 200',
+            'bairro' => 'Bela Vista',
+            'cidade' => 'Sao Paulo',
+            'estado' => 'SP',
+            'telefone' => '(11) 99999-9999',
+            'observacoes' => 'Empresa de TI',
+        ]));
 
         $response->assertRedirect(route('dashboard'));
 
         $this->assertDatabaseHas('companies', [
-            'cnpj'                => '11222333000181',
-            'logradouro'          => 'Av. Paulista',
-            'numero'              => '1000',
-            'cidade'              => 'Sao Paulo',
-            'estado'              => 'SP',
-            'email_corporativo'   => 'contato@techsolutions.com.br',
-            'nome_administrador'  => $user->name,
+            'cnpj' => '11222333000181',
+            'logradouro' => 'Av. Paulista',
+            'numero' => '1000',
+            'cidade' => 'Sao Paulo',
+            'estado' => 'SP',
+            'email_corporativo' => $this->corporateEmail($user, 'contato'),
+            'nome_administrador' => $user->name,
             'email_administrador' => $user->email,
+            'email_recuperacao_secundario' => $this->corporateEmail($user, 'recuperacao'),
         ]);
     }
 
@@ -273,10 +339,10 @@ class OnboardingFlowTest extends SecurityTestCase
         $this->actingAs($user);
 
         $response = $this->post(route('onboarding.complete'), [
-            'nome_fantasia'       => 'Tentativa',
-            'razao_social'        => 'Hacker LTDA',
-            'cnpj'                => '11222333000181',
-            'nome_administrador'  => 'Outro Nome',
+            'nome_fantasia' => 'Tentativa',
+            'razao_social' => 'Hacker LTDA',
+            'cnpj' => '11222333000181',
+            'nome_administrador' => 'Outro Nome',
             'email_administrador' => 'falso@example.com',
         ]);
 
@@ -313,5 +379,25 @@ class OnboardingFlowTest extends SecurityTestCase
         }
 
         return $user->refresh();
+    }
+
+    private function validPayload(User $user, array $overrides = []): array
+    {
+        $domain = substr(strrchr($user->email, '@'), 1);
+
+        return array_merge([
+            'nome_fantasia' => 'Empresa Teste',
+            'razao_social' => 'Empresa Teste LTDA',
+            'cnpj' => '11222333000181',
+            'dominio_corporativo' => $domain,
+            'email_corporativo' => $this->corporateEmail($user, 'contato'),
+            'email_administrador' => $user->email,
+            'email_recuperacao_secundario' => $this->corporateEmail($user, 'recuperacao'),
+        ], $overrides);
+    }
+
+    private function corporateEmail(User $user, string $localPart): string
+    {
+        return $localPart.'@'.substr(strrchr($user->email, '@'), 1);
     }
 }

@@ -20,6 +20,10 @@ class StoreTarefaProjetoRequest extends FormRequest
             'projeto_id'        => ['required', $this->tenantScopedExists('sts_projetos')],
             'nome'              => 'required|string|max:255',
             'kanban_coluna_id'  => ['nullable', $this->tenantScopedExists('kanban_colunas')],
+            'tags'              => 'sometimes|nullable|array',
+            'tags.*'            => 'string|max:50',
+            'users'             => 'sometimes|nullable|array',
+            'users.*'           => ['integer', $this->tenantScopedExists('users')],
         ];
     }
 }

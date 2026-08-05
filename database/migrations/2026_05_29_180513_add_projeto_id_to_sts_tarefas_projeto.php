@@ -11,10 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('sts_tarefas_projeto', function (Blueprint $table) {
-            $table->unsignedBigInteger('projeto_id')->nullable()->after('id');
-            // Can't add standard foreign key because sts_projetos might not be InnoDB or have unsigned big integer id in legacy
-        });
+        if (Schema::hasTable('sts_tarefas_projeto')) {
+            Schema::table('sts_tarefas_projeto', function (Blueprint $table) {
+                $table->unsignedBigInteger('projeto_id')->nullable()->after('id');
+            });
+        }
     }
 
     /**
@@ -22,8 +23,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('sts_tarefas_projeto', function (Blueprint $table) {
-            $table->dropColumn('projeto_id');
-        });
+        if (Schema::hasTable('sts_tarefas_projeto')) {
+            Schema::table('sts_tarefas_projeto', function (Blueprint $table) {
+                $table->dropColumn('projeto_id');
+            });
+        }
     }
 };

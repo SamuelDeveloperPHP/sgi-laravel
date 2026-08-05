@@ -48,7 +48,11 @@ class TarefaProjetoController extends Controller
             $validated['ordem'] = $maxOrdem + 1;
             $validated['status'] = 'pending';
 
-            TarefaProjeto::create($validated);
+            $tarefa = TarefaProjeto::create($validated);
+
+            if (isset($validated['users'])) {
+                $tarefa->users()->sync($validated['users']);
+            }
 
             Log::info("Ação criar tarefa projeto realizada pelo usuário " . auth()->user()->id);
             DB::commit();
@@ -70,6 +74,10 @@ class TarefaProjetoController extends Controller
         try {
             $tarefa->update($request->validated());
 
+            if ($request->has('users')) {
+                $tarefa->users()->sync($request->validated('users'));
+            }
+
             Log::info("Ação atualizar tarefa projeto realizada pelo usuário " . auth()->user()->id);
             DB::commit();
 
@@ -82,6 +90,48 @@ class TarefaProjetoController extends Controller
             Log::error($e->getMessage());
             return back()->with('error', 'Erro interno ao realizar operação.');
         }
+    }
+
+    /**
+     * Atualização leve para o Gantt: reagendar (arrastar/redimensionar) e progresso.
+     * Recalcula tempo_duracao como a diferença entre as datas (em dias).
+     * Retorna JSON — chamado via axios, sem recarregar a página.
+     */
+    public function updateGantt(Request $request, TarefaProjeto $tarefa)
+    {
+        $this->authorize('update', $tarefa);
+
+        $request->validate([
+            'dt_inicio' => ['nullable', 'date_format:Y-m-d'],
+            'dt_fim'    => ['nullable', 'date_format:Y-m-d'],
+            'progresso' => ['nullable', 'integer', 'min:0', 'max:100'],
+        ]);
+
+        $payload = array_filter(
+            $request->only(['dt_inicio', 'dt_fim', 'progresso']),
+            fn ($v) => $v !== null
+        );
+
+        $ini = $payload['dt_inicio'] ?? $tarefa->dt_inicio;
+        $fim = $payload['dt_fim'] ?? $tarefa->dt_fim;
+        if ($ini && $fim) {
+            $payload['tempo_duracao'] = (int) round(abs(
+                \Carbon\Carbon::parse($ini)->diffInDays(\Carbon\Carbon::parse($fim))
+            ));
+        }
+
+        if ($payload) {
+            $tarefa->update($payload);
+        }
+
+        return response()->json([
+            'success'       => true,
+            'id'            => $tarefa->id,
+            'dt_inicio'     => $tarefa->dt_inicio,
+            'dt_fim'        => $tarefa->dt_fim,
+            'tempo_duracao' => $tarefa->tempo_duracao,
+            'progresso'     => $tarefa->progresso,
+        ]);
     }
 
     public function destroy(DestroyTarefaProjetoRequest $request, TarefaProjeto $tarefa)
@@ -174,7 +224,10 @@ class TarefaProjetoController extends Controller
         DB::beginTransaction();
         try {
             $file = $request->file('file');
-            $path = $file->store('tarefas/anexos', 'public');
+            $path = $file->store(
+                'companies/' . $tarefa->company_id . '/tarefas/anexos',
+                'local'
+            );
 
             $tarefa->anexos()->create([
                 'user_id' => auth()->id(),
@@ -202,7 +255,7 @@ class TarefaProjetoController extends Controller
     {
         DB::beginTransaction();
         try {
-            Storage::disk('public')->delete($anexo->file_path);
+            Storage::disk('local')->delete($anexo->file_path);
             $anexo->delete();
             Log::info("Ação excluir anexo em tarefa realizada pelo usuário " . auth()->user()->id);
             DB::commit();
@@ -215,6 +268,17 @@ class TarefaProjetoController extends Controller
             Log::error($e->getMessage());
             return back()->with('error', 'Erro interno ao realizar operação.');
         }
+    }
+
+    public function downloadAttachment(TarefaProjetoAnexo $anexo)
+    {
+        $this->authorize('view', $anexo->tarefa);
+
+        if (!Storage::disk('local')->exists($anexo->file_path)) {
+            abort(404);
+        }
+
+        return Storage::disk('local')->download($anexo->file_path, $anexo->file_name);
     }
 
     public function storeChecklist(StoreTarefaProjetoChecklistRequest $request, TarefaProjeto $tarefa)

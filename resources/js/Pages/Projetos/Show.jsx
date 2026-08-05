@@ -1,12 +1,13 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { Plus, Trash2, Search, MoreHorizontal } from 'lucide-react';
+import { Plus, Trash2, Search, MoreHorizontal, CalendarRange } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import TextInput from '@/Components/TextInput';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TaskModal from './Components/TaskModal';
 import axios from 'axios';
+import dayjs from 'dayjs';
 
 export default function Show({ projeto }) {
     const { errors } = usePage().props;
@@ -29,11 +30,12 @@ export default function Show({ projeto }) {
     // State to track which column is showing the "Add Task" input
     const [addingTaskColId, setAddingTaskColId] = useState(null);
     const [newTaskNames, setNewTaskNames] = useState({});
+    const [searchTerm, setSearchTerm] = useState('');
 
     const handleAddColumn = (e) => {
         e.preventDefault();
         if(!newColName.trim()) return;
-        router.post(route('kanban-colunas.store'), {
+        router.post('/kanban-colunas', {
             projeto_id: projeto.id,
             nome: newColName
         }, {
@@ -47,13 +49,13 @@ export default function Show({ projeto }) {
 
     const handleDeleteColumn = (id) => {
         if(confirm('Tem certeza que deseja excluir esta coluna e todas as suas tarefas?')) {
-            router.delete(route('kanban-colunas.destroy', id), { preserveScroll: true });
+            router.delete(`/kanban-colunas/${id}`, { preserveScroll: true });
         }
     };
 
     const saveEditColumn = (col) => {
         if(editColName.trim() && editColName !== col.nome) {
-            router.put(route('kanban-colunas.update', col.id), { nome: editColName }, { preserveScroll: true });
+            router.put(`/kanban-colunas/${col.id}`, { nome: editColName }, { preserveScroll: true });
         }
         setEditingColId(null);
     };
@@ -63,7 +65,7 @@ export default function Show({ projeto }) {
         const nome = newTaskNames[colId];
         if(!nome || !nome.trim()) return;
         
-        router.post(route('tarefas.store'), {
+        router.post('/tarefas', {
             projeto_id: projeto.id,
             kanban_coluna_id: colId,
             nome: nome
@@ -78,9 +80,39 @@ export default function Show({ projeto }) {
 
     const handleDeleteTask = (id) => {
         if(confirm('Excluir tarefa?')) {
-            router.delete(route('tarefas.destroy', id), { preserveScroll: true });
+            router.delete(`/tarefas/${id}`, { preserveScroll: true });
         }
     };
+
+    const handleUpdateTaskLocally = (updatedTask) => {
+        setColumns(prevCols => prevCols.map(col => {
+            const containsTask = col.tarefas.some(t => String(t.id) === String(updatedTask.id));
+            const isTargetColumn = String(col.id) === String(updatedTask.kanban_coluna_id);
+
+            if (isTargetColumn) {
+                if (containsTask) {
+                    return {
+                        ...col,
+                        tarefas: col.tarefas.map(t => String(t.id) === String(updatedTask.id) ? updatedTask : t)
+                    };
+                } else {
+                    return {
+                        ...col,
+                        tarefas: [...col.tarefas, updatedTask].sort((a, b) => a.ordem - b.ordem)
+                    };
+                }
+            } else {
+                if (containsTask) {
+                    return {
+                        ...col,
+                        tarefas: col.tarefas.filter(t => String(t.id) !== String(updatedTask.id))
+                    };
+                }
+            }
+            return col;
+        }));
+    };
+
 
     const onDragEnd = (result) => {
         const { destination, source, type } = result;
@@ -95,7 +127,7 @@ export default function Show({ projeto }) {
             const updatedCols = newCols.map((c, idx) => ({ ...c, ordem: idx + 1 }));
             setColumns(updatedCols);
 
-            axios.post(route('kanban-colunas.reorder'), {
+            axios.post('/kanban-colunas/reorder', {
                 columns: updatedCols.map(c => ({ id: c.id, ordem: c.ordem }))
             });
             return;
@@ -119,7 +151,7 @@ export default function Show({ projeto }) {
             newCols[startColIndex] = { ...startCol, tarefas: updatedTasks };
             setColumns(newCols);
 
-            axios.post(route('tarefas.reorder'), {
+            axios.post('/tarefas/reorder', {
                 tasks: updatedTasks.map(t => ({ id: t.id, ordem: t.ordem, kanban_coluna_id: startCol.id }))
             });
         } else {
@@ -138,7 +170,7 @@ export default function Show({ projeto }) {
             newCols[finishColIndex] = { ...finishCol, tarefas: updatedFinish };
             setColumns(newCols);
 
-            axios.post(route('tarefas.reorder'), {
+            axios.post('/tarefas/reorder', {
                 tasks: [
                     ...updatedStart.map(t => ({ id: t.id, ordem: t.ordem, kanban_coluna_id: startCol.id })),
                     ...updatedFinish.map(t => ({ id: t.id, ordem: t.ordem, kanban_coluna_id: finishCol.id }))
@@ -171,6 +203,15 @@ export default function Show({ projeto }) {
         return tags;
     };
 
+    const filteredColumns = columns.map(col => ({
+        ...col,
+        tarefas: (col.tarefas || []).filter(t => 
+            searchTerm === '' || 
+            (t.nome && t.nome.toLowerCase().includes(searchTerm.toLowerCase())) || 
+            (t.descricao && t.descricao.toLowerCase().includes(searchTerm.toLowerCase()))
+        )
+    }));
+
     return (
         <AuthenticatedLayout
             header={null} // Removemos o header padrão para criar o customizado
@@ -191,6 +232,8 @@ export default function Show({ projeto }) {
                             <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                             <input 
                                 type="text" 
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
                                 placeholder="Filtrar cartões..." 
                                 className="pl-9 pr-4 py-1.5 text-sm bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md focus:ring-0 focus:border-gray-300 w-60 text-gray-700 dark:text-gray-200 placeholder-gray-400"
                             />
@@ -221,8 +264,8 @@ export default function Show({ projeto }) {
                                     ref={provided.innerRef}
                                     {...provided.droppableProps}
                                 >
-                                    {columns.map((col, index) => (
-                                        <Draggable key={col.id.toString()} draggableId={col.id.toString()} index={index}>
+                                    {filteredColumns.map((col, index) => (
+                                        <Draggable key={col.id.toString()} draggableId={col.id.toString()} index={index} isDragDisabled={searchTerm.trim() !== ''}>
                                             {(provided, snapshot) => (
                                                 <div
                                                     ref={provided.innerRef}
@@ -282,9 +325,9 @@ export default function Show({ projeto }) {
                                                                 className={`flex-1 overflow-y-auto space-y-3 min-h-[50px] pb-2 ${snapshot.isDraggingOver ? 'bg-gray-100 rounded-lg' : ''}`}
                                                             >
                                                                 {col.tarefas.map((tarefa, tIndex) => {
-                                                                    const tags = getFakeTags(tarefa.id);
+                                                                    const tags = tarefa.tags || [];
                                                                     return (
-                                                                    <Draggable key={tarefa.id.toString()} draggableId={`task-${tarefa.id}`} index={tIndex}>
+                                                                    <Draggable key={tarefa.id.toString()} draggableId={`task-${tarefa.id}`} index={tIndex} isDragDisabled={searchTerm.trim() !== ''}>
                                                                         {(provided, snapshot) => (
                                                                             <div
                                                                                 ref={provided.innerRef}
@@ -296,8 +339,8 @@ export default function Show({ projeto }) {
                                                                                 {/* Tags */}
                                                                                 <div className="flex flex-wrap gap-1.5 mb-3">
                                                                                     {tags.map((tag, i) => (
-                                                                                        <span key={i} className={`text-[10px] px-1.5 py-[2px] rounded border font-bold uppercase tracking-wide ${tag.class}`}>
-                                                                                            {tag.label}
+                                                                                        <span key={i} className={`text-[10px] px-1.5 py-[2px] rounded border font-bold uppercase tracking-wide bg-indigo-500/10 text-indigo-600 border-indigo-500/20 dark:text-indigo-400`}>
+                                                                                            {tag}
                                                                                         </span>
                                                                                     ))}
                                                                                 </div>
@@ -318,19 +361,40 @@ export default function Show({ projeto }) {
                                                                                 </p>
 
                                                                                 <div className="flex items-center justify-between mt-auto">
-                                                                                    <div className={`flex items-center ${tarefa.id % 2 === 0 ? 'text-red-500' : 'text-gray-500'} font-medium text-[12px] gap-1`}>
-                                                                                        <span className="font-bold">M</span> 
-                                                                                        <span>30 Abr</span>
-                                                                                    </div>
+                                                                                    {/* Datas início → fim */}
+                                                                                    {(tarefa.dt_inicio || tarefa.dt_fim) ? (() => {
+                                                                                        const inicio = tarefa.dt_inicio ? dayjs(tarefa.dt_inicio) : null;
+                                                                                        const fim    = tarefa.dt_fim    ? dayjs(tarefa.dt_fim)    : null;
+                                                                                        const atrasada = fim && fim.isBefore(dayjs(), 'day');
+                                                                                        const fmt = (d) => d.format('DD/MM');
+                                                                                        return (
+                                                                                            <div className={`flex items-center gap-1 text-[11px] font-medium px-1.5 py-0.5 rounded ${
+                                                                                                atrasada
+                                                                                                    ? 'bg-red-500/10 text-red-500'
+                                                                                                    : 'bg-gray-100 dark:bg-gray-700/60 text-gray-500 dark:text-gray-400'
+                                                                                            }`}>
+                                                                                                <CalendarRange className="w-3 h-3 flex-shrink-0" />
+                                                                                                {inicio && fim
+                                                                                                    ? <span>{fmt(inicio)} → {fmt(fim)}</span>
+                                                                                                    : inicio
+                                                                                                        ? <span>Início: {fmt(inicio)}</span>
+                                                                                                        : <span>Até {fmt(fim)}</span>
+                                                                                                }
+                                                                                            </div>
+                                                                                        );
+                                                                                    })()
+                                                                                    : <span />}
                                                                                     
-                                                                                    {/* Avatar */}
+                                                                                    {/* Avatares dos membros */}
                                                                                     <div className="flex -space-x-1">
-                                                                                        <div className={`flex items-center justify-center w-6 h-6 rounded-full text-white text-[10px] font-bold ring-2 ring-white ${tarefa.id % 2 === 0 ? 'bg-purple-500' : 'bg-amber-500'}`}>
-                                                                                            {tarefa.nome.substring(0, 2).toUpperCase()}
-                                                                                        </div>
-                                                                                        {tarefa.id % 3 === 0 && (
-                                                                                            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-500 text-white text-[10px] font-bold ring-2 ring-white">
-                                                                                                TH
+                                                                                        {(tarefa.users || []).slice(0, 3).map((user, idx) => (
+                                                                                            <div key={user.id} className={`flex items-center justify-center w-6 h-6 rounded-full text-white text-[10px] font-bold ring-2 ring-white dark:ring-gray-800 ${idx % 2 === 0 ? 'bg-indigo-500' : 'bg-emerald-500'}`} title={user.name}>
+                                                                                                {user.name.substring(0, 2).toUpperCase()}
+                                                                                            </div>
+                                                                                        ))}
+                                                                                        {(tarefa.users?.length || 0) > 3 && (
+                                                                                            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-gray-500 text-white text-[10px] font-bold ring-2 ring-white dark:ring-gray-800">
+                                                                                                +{(tarefa.users.length - 3)}
                                                                                             </div>
                                                                                         )}
                                                                                     </div>
@@ -433,8 +497,9 @@ export default function Show({ projeto }) {
             <TaskModal 
                 isOpen={!!selectedTask} 
                 onClose={() => setSelectedTask(null)} 
-                task={selectedTask ? columns.flatMap(c => c.tarefas).find(t => t.id === selectedTask.id) : null} 
+                task={selectedTask ? columns.flatMap(c => c.tarefas || []).find(t => t.id === selectedTask.id) : null} 
                 columns={columns} 
+                onUpdateTask={handleUpdateTaskLocally}
             />
         </AuthenticatedLayout>
     );

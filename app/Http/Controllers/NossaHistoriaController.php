@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Company;
 use App\Models\NossaHistoria;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -26,6 +27,8 @@ class NossaHistoriaController extends Controller
             abort(403, 'Nenhuma empresa associada ao usuário ou cadastrada no sistema.');
         }
 
+        $company = Company::findOrFail($companyId);
+
         $historia = NossaHistoria::firstOrCreate(
             ['company_id' => $companyId],
             ['conteudo' => '']
@@ -36,6 +39,7 @@ class NossaHistoriaController extends Controller
         return Inertia::render('ISO9001/NossaHistoria/Index', [
             'historia' => $historia,
             'companies' => $companies,
+            'company' => $company->only(['id', 'nome_fantasia', 'razao_social']),
             'currentCompanyId' => (int) $companyId
         ]);
     }

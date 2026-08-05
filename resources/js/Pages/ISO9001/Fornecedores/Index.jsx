@@ -114,7 +114,7 @@ export default function Index({ auth, fornecedores, filters, companies, currentC
                                 </form>
 
                                 <div className="flex gap-2">
-                                    {auth.user.permissions?.includes('manage-fornecedores') && (
+                                    {(isMasterAdmin || auth.user.permissions?.includes('manage-fornecedores')) && (
                                         <>
                                             <button
                                                 onClick={() => setShowConfigModal(true)}
@@ -173,7 +173,7 @@ export default function Index({ auth, fornecedores, filters, companies, currentC
                                                             <Link href={route('fornecedores.show', item.id)} className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300" title="Ver Painel">
                                                                 <Eye className="w-5 h-5" />
                                                             </Link>
-                                                            {auth.user.permissions?.includes('manage-fornecedores') && (
+                                                            {(isMasterAdmin || auth.user.permissions?.includes('manage-fornecedores')) && (
                                                                 <>
                                                                     <Link href={route('fornecedores.edit', item.id)} className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300" title="Editar Dados">
                                                                         <Edit className="w-5 h-5" />

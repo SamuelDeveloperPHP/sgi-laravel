@@ -5,8 +5,7 @@ import { useState } from 'react';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import PrimaryButton from '@/Components/PrimaryButton';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import ReactQuill from '@/Components/RichTextEditor';
 
 export default function Form({ projeto, users = [] }) {
     const isEditing = !!projeto?.id;

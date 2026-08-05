@@ -48,6 +48,10 @@ return new class extends Migration
 
     public function up(): void
     {
+        if (DB::getDriverName() === 'sqlite') {
+            return;
+        }
+
         // ============================================================
         // ETAPA 1 — Backfill remanescente (precondicao para FK)
         // ============================================================
@@ -141,6 +145,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (DB::getDriverName() === 'sqlite') {
+            return;
+        }
+
         // Drop FKs primeiro (ordem inversa de criação)
         foreach (array_reverse($this->qsmsTables) as $t) {
             if (!Schema::hasTable($t)) continue;

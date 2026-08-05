@@ -12,6 +12,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
+            \App\Http\Middleware\SanitizeRichText::class,
             \App\Http\Middleware\HandleInertiaRequests::class,
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
             // Adiciona headers de seguranca (HSTS, CSP, X-Frame-Options, etc.)
@@ -29,10 +30,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'company.required' => \App\Http\Middleware\RequireCompany::class,
         ]);
     })
+    // Preserve o status HTTP original das negacoes de autorizacao. Converter
+    // todo 403 em redirect 302 mascara falhas nos testes, quebra clientes de
+    // API e torna a resposta dependente do header Referer.
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\HttpException $e, \Illuminate\Http\Request $request) {
-            if ($e->getStatusCode() === 403) {
-                return redirect()->back()->with('error', $e->getMessage() ?: 'Acesso não autorizado a este recurso.');
-            }
-        });
+        // Usa o tratamento seguro padrao do Laravel (403 permanece 403).
     })->create();

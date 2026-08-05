@@ -3,6 +3,8 @@
 namespace App\Http\Requests;
 
 use App\Services\CnpjValidator;
+use App\Rules\CorporateEmail;
+use App\Services\CorporateDomain;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -40,15 +42,20 @@ class CompleteOnboardingRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        if ($this->has('cnpj')) {
-            $this->merge([
-                'cnpj' => CnpjValidator::sanitize((string) $this->input('cnpj')),
-            ]);
-        }
+        $this->merge([
+            'cnpj' => CnpjValidator::sanitize((string) $this->input('cnpj')),
+            'dominio_corporativo' => CorporateDomain::normalize((string) $this->input('dominio_corporativo')),
+            'email_corporativo' => strtolower(trim((string) $this->input('email_corporativo'))),
+            'email_administrador' => strtolower(trim((string) $this->input('email_administrador'))),
+            'email_recuperacao_secundario' => strtolower(trim((string) $this->input('email_recuperacao_secundario'))),
+        ]);
     }
 
     public function rules(): array
     {
+        $domain = (string) $this->input('dominio_corporativo');
+        $authenticatedEmail = strtolower((string) $this->user()?->email);
+
         return [
             // Identificacao
             'nome_fantasia' => ['required', 'string', 'max:255'],
@@ -65,7 +72,7 @@ class CompleteOnboardingRequest extends FormRequest
                 },
             ],
 
-            // Endereco (opcional - alguns vem do ReceitaWS, outros
+            // Endereco (opcional - alguns campos vem da APIBrasil, outros
             // o usuario preenche). Limites condizentes com a migration.
             'cep'          => ['nullable', 'string', 'max:10'],
             'logradouro'   => ['nullable', 'string', 'max:255'],
@@ -76,8 +83,24 @@ class CompleteOnboardingRequest extends FormRequest
             'estado'       => ['nullable', 'string', 'size:2'],
 
             // Contato corporativo
-            'email_corporativo' => ['nullable', 'email', 'max:255'],
+            'dominio_corporativo' => ['required', 'string', 'max:253'],
+            'email_corporativo' => ['required', 'email:rfc', 'max:255', new CorporateEmail($domain)],
             'telefone'          => ['nullable', 'string', 'max:20'],
+
+            // O usuario verificado que conclui o fluxo e o administrador.
+            // Uma conta nao pode indicar terceiro e ganhar o papel de admin.
+            'email_administrador' => [
+                'required', 'email:rfc', 'max:255', new CorporateEmail($domain),
+                function ($attribute, $value, $fail) use ($authenticatedEmail) {
+                    if (!hash_equals($authenticatedEmail, strtolower((string) $value))) {
+                        $fail('O e-mail do administrador deve ser o mesmo da conta verificada.');
+                    }
+                },
+            ],
+            'email_recuperacao_secundario' => [
+                'required', 'email:rfc', 'max:255', 'different:email_administrador',
+                new CorporateEmail($domain),
+            ],
 
             // Observacoes
             'observacoes' => ['nullable', 'string', 'max:5000'],
@@ -88,7 +111,6 @@ class CompleteOnboardingRequest extends FormRequest
             'is_master_admin'      => 'prohibited',
             'status'               => 'prohibited',
             'nome_administrador'   => 'prohibited', // setado pelo backend
-            'email_administrador'  => 'prohibited', // setado pelo backend
             'criterios_avaliacao_fornecedor' => 'prohibited',
         ];
     }
@@ -103,6 +125,10 @@ class CompleteOnboardingRequest extends FormRequest
             'cnpj.unique'              => 'Já existe uma empresa cadastrada com este CNPJ.',
             'estado.size'              => 'A UF deve ter exatamente 2 letras (ex: SP, RJ).',
             'email_corporativo.email'  => 'Informe um e-mail corporativo válido.',
+            'dominio_corporativo.required' => 'Informe o dominio oficial da empresa.',
+            'email_administrador.required' => 'Informe o e-mail do administrador.',
+            'email_recuperacao_secundario.required' => 'Informe um segundo e-mail de recuperacao.',
+            'email_recuperacao_secundario.different' => 'O segundo e-mail de recuperacao deve ser diferente do administrador.',
         ];
     }
 }

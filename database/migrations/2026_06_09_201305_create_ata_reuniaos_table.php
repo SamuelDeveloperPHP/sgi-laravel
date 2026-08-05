@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('sts_atas', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('company_id')->constrained('sts_companies')->cascadeOnDelete();
+            $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
             $table->date('data');
             $table->time('hora_inicio');
             $table->time('hora_termino');

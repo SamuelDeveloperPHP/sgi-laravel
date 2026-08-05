@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm, usePage } from '@inertiajs/react';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import { Head, useForm } from '@inertiajs/react';
+import RichTextEditor from '@/Components/RichTextEditor';
 import { 
     Save, 
     Send, 
@@ -21,9 +20,7 @@ export default function Index({ auth, escopo, companies, users, currentCompanyId
     const userPermissions = auth.user?.permissions || [];
     const canManage = auth.user?.is_master_admin || userPermissions.includes('manage-escopo');
 
-    const [isEditing, setIsEditing] = useState(
-        (escopo.status === 'rascunho' || escopo.status === 'devolvida') && canManage
-    );
+    const [isEditing, setIsEditing] = useState(!escopo?.conteudo);
 
     const { data, setData, post, processing, errors } = useForm({
         conteudo: escopo.conteudo || '',
@@ -54,18 +51,18 @@ export default function Index({ auth, escopo, companies, users, currentCompanyId
         return badges[status] || badges['rascunho'];
     };
 
-    const modules = {
-        toolbar: [
-            [{ 'header': [1, 2, 3, false] }],
-            ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-            [{'list': 'ordered'}, {'list': 'bullet'}, {'indent': '-1'}, {'indent': '+1'}],
-            ['link', 'image'],
-            ['clean']
-        ],
+    const handleAction = (routeUrl) => {
+        post(routeUrl, {
+            preserveScroll: true,
+            onSuccess: () => setIsEditing(false)
+        });
     };
 
-    const handleAction = (route) => {
-        post(route, { preserveScroll: true });
+    const handleDelete = () => {
+        if (confirm('Tem certeza que deseja excluir o conteúdo? Ele voltará para o status de Rascunho.')) {
+            setData('conteudo', '');
+            post(route('escopo.salvar-rascunho'), { preserveScroll: true });
+        }
     };
 
     return (
@@ -125,19 +122,11 @@ export default function Index({ auth, escopo, companies, users, currentCompanyId
                         
                         {/* Editor Principal */}
                         <div className="lg:col-span-2 bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                            <style>{`
-                                .ql-editor {
-                                    min-height: 500px;
-                                }
-                            `}</style>
                             {isEditing ? (
                                 <div className="space-y-4">
-                                    <ReactQuill 
-                                        theme="snow" 
+                                    <RichTextEditor
                                         value={data.conteudo} 
                                         onChange={(val) => setData('conteudo', val)}
-                                        modules={modules}
-                                        className="bg-white dark:text-slate-900"
                                     />
                                     {errors.conteudo && <p className="text-sm text-red-600 mt-1">{errors.conteudo}</p>}
                                     
@@ -174,11 +163,23 @@ export default function Index({ auth, escopo, companies, users, currentCompanyId
                                         </div>
                                     </div>
 
-                                    <div className="flex justify-end pt-8">
+                                    <div className="flex justify-end pt-8 gap-2">
+                                        {escopo?.conteudo && (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setData('conteudo', escopo.conteudo);
+                                                    setIsEditing(false);
+                                                }}
+                                                className="inline-flex items-center px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-md font-semibold text-xs uppercase tracking-widest hover:bg-slate-50 transition"
+                                            >
+                                                Cancelar
+                                            </button>
+                                        )}
                                         <button
                                             onClick={() => handleAction(route('escopo.salvar-rascunho'))}
                                             disabled={processing}
-                                            className="inline-flex items-center px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 rounded-md font-semibold text-xs text-slate-700 dark:text-slate-300 uppercase tracking-widest shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150"
+                                            className="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 disabled:opacity-25 transition"
                                         >
                                             <Save className="h-4 w-4 mr-2" />
                                             Salvar Rascunho
@@ -186,7 +187,27 @@ export default function Index({ auth, escopo, companies, users, currentCompanyId
                                     </div>
                                 </div>
                             ) : (
-                                <div className="prose max-w-none dark:prose-invert min-h-[500px]" dangerouslySetInnerHTML={{ __html: escopo.conteudo || '<p class="text-slate-500">Nenhum conteúdo definido ainda.</p>' }} />
+                                <div className="space-y-4">
+                                    <div className="rich-text-output max-w-none min-h-[500px]" dangerouslySetInnerHTML={{ __html: escopo.conteudo || '<p class="text-slate-500">Nenhum conteúdo definido ainda.</p>' }} />
+
+                                    {canManage && (isRascunho || isAprovada) && (
+                                        <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-700">
+                                            <button
+                                                onClick={() => setIsEditing(true)}
+                                                className="inline-flex items-center px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 rounded-md font-semibold text-xs text-slate-700 dark:text-slate-300 uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+                                            >
+                                                Editar
+                                            </button>
+                                            <button
+                                                onClick={handleDelete}
+                                                disabled={processing}
+                                                className="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 disabled:opacity-25 transition"
+                                            >
+                                                Excluir
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             )}
                         </div>
 

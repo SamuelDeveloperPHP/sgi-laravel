@@ -14,7 +14,8 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['"Helvetica Neue"', 'Roboto', 'Arial', '"Droid Sans"', 'sans-serif'],
+                sans: ['var(--font)'],
+                mono: ['var(--font-mono)'],
             },
             colors: {
                 // Paleta TEAL calibrada em torno de #1ABB9C (Gentelella v4 brand).

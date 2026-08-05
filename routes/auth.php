@@ -18,6 +18,10 @@ Route::middleware('guest')->group(function () {
     Route::post('register', [RegisteredUserController::class, 'store'])
         ->middleware('throttle:register');
 
+    Route::post('register/lookup-cnpj', [RegisteredUserController::class, 'lookupCnpj'])
+        ->middleware('throttle:cnpj-lookup')
+        ->name('register.lookup-cnpj');
+
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
 

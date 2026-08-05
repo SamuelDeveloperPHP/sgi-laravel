@@ -2,13 +2,16 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\TenantScopedRules;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreRevisaoDocumentoRegistroRequest extends FormRequest
 {
+    use TenantScopedRules;
+
     public function authorize()
     {
-        return auth()->check() && auth()->user()->hasPermissionTo('manage-controle-documentos');
+        return auth()->check() && auth()->user()->can('manage-controle-documentos');
     }
 
     public function rules()
@@ -17,8 +20,8 @@ class StoreRevisaoDocumentoRegistroRequest extends FormRequest
             'revisao' => 'required|string|max:255',
             'data_revisao' => 'required|date',
             'alteracoes' => 'nullable|string',
-            'responsavel_id' => 'nullable|exists:users,id',
-            'aprovador_id' => 'nullable|exists:users,id',
+            'responsavel_id' => ['nullable', $this->tenantScopedExists('users')],
+            'aprovador_id' => ['nullable', $this->tenantScopedExists('users')],
         ];
     }
 }

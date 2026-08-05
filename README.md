@@ -7,6 +7,34 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+## Docker local com Laravel Sail
+
+Este projeto usa o Docker padrão do Laravel, o **Laravel Sail**.
+
+Serviços configurados:
+
+- `laravel.test`: aplicação Laravel em Linux/PHP 8.4
+- `mysql`: MySQL 8.4
+- `redis`: Redis
+- `mailpit`: caixa de e-mail local
+
+Portas locais configuradas no `.env` para não conflitar com Wamp:
+
+- Aplicação: `http://localhost:8082`
+- MySQL local: `localhost:3308`
+- Redis local: `localhost:6380`
+- Mailpit: `http://localhost:8025`
+- phpMyAdmin: `http://localhost:8083`
+
+Comandos principais:
+
+```bash
+./vendor/bin/sail up -d
+./vendor/bin/sail artisan migrate
+./vendor/bin/sail npm run dev
+./vendor/bin/sail down
+```
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:

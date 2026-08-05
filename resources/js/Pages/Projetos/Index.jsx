@@ -1,6 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
-import { Plus, Briefcase, Filter } from 'lucide-react';
+import { Plus, Briefcase, Filter, Eye, Edit2 } from 'lucide-react';
 
 export default function Index({ projetos }) {
     const stripHtml = (html) => {
@@ -67,10 +67,9 @@ export default function Index({ projetos }) {
                             const status = getStatusInfo(progresso);
 
                             return (
-                                <Link 
+                                <div 
                                     key={projeto.id} 
-                                    href={route('projetos.show', projeto.id)}
-                                    className="block bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow group"
+                                    className="flex flex-col bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow group relative"
                                 >
                                     {/* Top row */}
                                     <div className="flex justify-between items-start mb-1">
@@ -108,9 +107,40 @@ export default function Index({ projetos }) {
                                     </div>
 
                                     {/* Footer */}
-                                    <div className="flex justify-between items-center mt-auto pt-2">
-                                        <div className="flex -space-x-1.5">
-                                            {projeto.membros?.slice(0, 4).map((membro, i) => (
+                                    <div className="flex justify-between items-center mt-auto pt-4 border-t border-gray-100">
+                                        <div className="flex gap-2">
+                                            <Link
+                                                href={route('projetos.show', projeto.id)}
+                                                className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-md transition-colors"
+                                                title="Acessar Kanban do Projeto"
+                                            >
+                                                <Eye className="w-3.5 h-3.5" />
+                                                Kanban
+                                            </Link>
+                                            <a
+                                                href={route('projetos.gantt', projeto.id)}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-md transition-colors"
+                                                title="Abrir Cronograma (Gantt) em nova aba"
+                                            >
+                                                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                                    <path d="M8 6h10M6 12h12M10 18h8" />
+                                                </svg>
+                                                Gantt
+                                            </a>
+                                            <Link
+                                                href={route('projetos.edit', projeto.id)}
+                                                className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 px-3 py-1.5 rounded-md transition-colors"
+                                                title="Editar Informações do Projeto"
+                                            >
+                                                <Edit2 className="w-3.5 h-3.5" />
+                                                Editar
+                                            </Link>
+                                        </div>
+                                        
+                                        <div className="flex -space-x-1.5" title="Membros do Projeto">
+                                            {projeto.membros?.slice(0, 3).map((membro, i) => (
                                                 <img 
                                                     key={membro.id} 
                                                     className="w-7 h-7 rounded-full border-2 border-white" 
@@ -127,17 +157,14 @@ export default function Index({ projetos }) {
                                                     title={projeto.responsavel.name} 
                                                 />
                                             )}
-                                            {(!projeto.membros || projeto.membros.length === 0) && !projeto.responsavel && (
-                                                <div className="w-7 h-7 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center">
-                                                    <span className="text-[10px] text-gray-400">?</span>
+                                            {projeto.membros?.length > 3 && (
+                                                <div className="w-7 h-7 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[10px] font-bold text-gray-600 z-10 relative">
+                                                    +{projeto.membros.length - 3}
                                                 </div>
                                             )}
                                         </div>
-                                        <div className="text-[13px] text-gray-500">
-                                            Due {formatDue(projeto.data_fim)}
-                                        </div>
                                     </div>
-                                </Link>
+                                </div>
                             );
                         })}
                     </div>

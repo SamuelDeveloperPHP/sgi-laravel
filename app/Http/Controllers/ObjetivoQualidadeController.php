@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ObjetivoQualidade;
 use App\Models\User;
 use App\Models\Company;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -93,7 +94,7 @@ class ObjetivoQualidadeController extends Controller
                 ->with('success', 'Objetivo da Qualidade criado com sucesso.');
         } catch (\Exception $e) {
             DB::rollBack();
-            if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpException) {
+            if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpException || $e instanceof ModelNotFoundException) {
                 throw $e;
             }
             Log::error($e->getMessage());
@@ -170,7 +171,7 @@ class ObjetivoQualidadeController extends Controller
                 ->with('success', 'Objetivo atualizado com sucesso.');
         } catch (\Exception $e) {
             DB::rollBack();
-            if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpException) {
+            if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpException || $e instanceof ModelNotFoundException) {
                 throw $e;
             }
             Log::error($e->getMessage());
@@ -191,7 +192,7 @@ class ObjetivoQualidadeController extends Controller
                 ->with('success', 'Objetivo excluído com sucesso.');
         } catch (\Exception $e) {
             DB::rollBack();
-            if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpException) {
+            if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpException || $e instanceof ModelNotFoundException) {
                 throw $e;
             }
             Log::error($e->getMessage());
@@ -230,7 +231,7 @@ class ObjetivoQualidadeController extends Controller
             return back()->with('success', 'Enviado para revisão.');
         } catch (\Exception $e) {
             DB::rollBack();
-            if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpException) {
+            if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpException || $e instanceof ModelNotFoundException) {
                 throw $e;
             }
             Log::error($e->getMessage());
@@ -262,7 +263,7 @@ class ObjetivoQualidadeController extends Controller
             return back()->with('success', 'Revisão aprovada.');
         } catch (\Exception $e) {
             DB::rollBack();
-            if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpException) {
+            if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpException || $e instanceof ModelNotFoundException) {
                 throw $e;
             }
             Log::error($e->getMessage());
@@ -298,7 +299,7 @@ class ObjetivoQualidadeController extends Controller
             return back()->with('success', 'Aprovação final concluída.');
         } catch (\Exception $e) {
             DB::rollBack();
-            if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpException) {
+            if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpException || $e instanceof ModelNotFoundException) {
                 throw $e;
             }
             Log::error($e->getMessage());
@@ -323,7 +324,7 @@ class ObjetivoQualidadeController extends Controller
             return back()->with('success', 'Devolvido com sucesso.');
         } catch (\Exception $e) {
             DB::rollBack();
-            if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpException) {
+            if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpException || $e instanceof ModelNotFoundException) {
                 throw $e;
             }
             Log::error($e->getMessage());

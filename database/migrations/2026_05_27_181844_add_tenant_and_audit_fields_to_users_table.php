@@ -14,6 +14,9 @@ return new class extends Migration
                 // No futuro, adicionar a foreign key para a tabela companies.
                 $table->index('company_id');
             }
+            if (!Schema::hasColumn('users', 'is_master_admin')) {
+                $table->boolean('is_master_admin')->default(false)->after('email');
+            }
         });
     }
 
@@ -23,6 +26,9 @@ return new class extends Migration
             if (Schema::hasColumn('users', 'company_id')) {
                 $table->dropIndex(['company_id']);
                 $table->dropColumn('company_id');
+            }
+            if (Schema::hasColumn('users', 'is_master_admin')) {
+                $table->dropColumn('is_master_admin');
             }
         });
     }

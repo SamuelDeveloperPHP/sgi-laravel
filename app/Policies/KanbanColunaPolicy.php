@@ -8,4 +8,5 @@ namespace App\Policies;
  */
 class KanbanColunaPolicy extends AbstractTenantPolicy
 {
+    protected string $permissionResource = 'kanban-colunas';
 }

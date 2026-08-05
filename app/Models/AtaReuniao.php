@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\Tenantable;
 
 class AtaReuniao extends Model
 {
-    use HasFactory;
+    use HasFactory, Tenantable;
 
     protected $table = 'sts_atas';
 

@@ -33,8 +33,11 @@ class FornecedorController extends Controller
         }
 
         if ($request->filled('search')) {
-            $query->where('razao_social', 'like', '%' . $request->search . '%')
-                  ->orWhere('cnpj_cpf', 'like', '%' . $request->search . '%');
+            $search = $request->string('search')->toString();
+            $query->where(function ($subQuery) use ($search) {
+                $subQuery->where('razao_social', 'like', '%' . $search . '%')
+                    ->orWhere('cnpj_cpf', 'like', '%' . $search . '%');
+            });
         }
 
         if ($request->filled('status')) {
@@ -62,6 +65,11 @@ class FornecedorController extends Controller
         $request->validate([
             'criterios' => 'nullable|array'
         ]);
+
+        $user = $request->user();
+        if (!$user->is_master_admin && (int) $companyId !== (int) $user->company_id) {
+            abort(404);
+        }
 
         $company = Company::findOrFail($companyId);
         $company->criterios_avaliacao_fornecedor = $request->criterios;

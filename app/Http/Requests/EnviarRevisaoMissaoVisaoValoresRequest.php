@@ -2,21 +2,24 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\TenantScopedRules;
 use Illuminate\Foundation\Http\FormRequest;
 
 class EnviarRevisaoMissaoVisaoValoresRequest extends FormRequest
 {
+    use TenantScopedRules;
+
     public function authorize()
     {
-        return auth()->check() && auth()->user()->hasPermissionTo('manage-missao-visao-valores');
+        return auth()->check() && auth()->user()->can('manage-missao-visao-valores');
     }
 
     public function rules()
     {
         return [
             'conteudo' => 'required|string',
-            'revisor_id' => 'required|exists:users,id',
-            'aprovador_id' => 'required|exists:users,id',
+            'revisor_id' => ['required', $this->tenantScopedExists('users')],
+            'aprovador_id' => ['required', $this->tenantScopedExists('users')],
         ];
     }
 

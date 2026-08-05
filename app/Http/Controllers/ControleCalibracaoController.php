@@ -98,7 +98,10 @@ class ControleCalibracaoController extends Controller
             $data['created_by'] = auth()->id();
 
             if ($request->hasFile('arquivo')) {
-                $data['arquivo_certificado'] = $request->file('arquivo')->store('certificados_calibracao', 'public');
+                $data['arquivo_certificado'] = $request->file('arquivo')->store(
+                    'companies/' . $data['company_id'] . '/certificados-calibracao',
+                    'local'
+                );
             }
 
             ControleCalibracao::create($data);
@@ -135,9 +138,12 @@ class ControleCalibracaoController extends Controller
 
             if ($request->hasFile('arquivo')) {
                 if ($controleCalibraco->arquivo_certificado) {
-                    Storage::disk('public')->delete($controleCalibraco->arquivo_certificado);
+                    Storage::disk('local')->delete($controleCalibraco->arquivo_certificado);
                 }
-                $data['arquivo_certificado'] = $request->file('arquivo')->store('certificados_calibracao', 'public');
+                $data['arquivo_certificado'] = $request->file('arquivo')->store(
+                    'companies/' . $controleCalibraco->company_id . '/certificados-calibracao',
+                    'local'
+                );
             }
 
             $controleCalibraco->update($data);
@@ -161,7 +167,7 @@ class ControleCalibracaoController extends Controller
         DB::beginTransaction();
         try {
             if ($controleCalibraco->arquivo_certificado) {
-                Storage::disk('public')->delete($controleCalibraco->arquivo_certificado);
+                Storage::disk('local')->delete($controleCalibraco->arquivo_certificado);
             }
             
             $controleCalibraco->delete();
@@ -183,11 +189,11 @@ class ControleCalibracaoController extends Controller
     {
         $this->authorizePermission('view-controle-calibracoes');
 
-        if (!$controleCalibraco->arquivo_certificado || !Storage::disk('public')->exists($controleCalibraco->arquivo_certificado)) {
+        if (!$controleCalibraco->arquivo_certificado || !Storage::disk('local')->exists($controleCalibraco->arquivo_certificado)) {
             abort(404, 'Arquivo não encontrado.');
         }
 
-        return Storage::disk('public')->download($controleCalibraco->arquivo_certificado);
+        return Storage::disk('local')->download($controleCalibraco->arquivo_certificado);
     }
 
     public function exportarPdf(Request $request)

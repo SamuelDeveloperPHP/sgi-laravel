@@ -1,6 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm, router } from '@inertiajs/react';
-import { Plus, Edit, Trash2, Building, Search, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, Building, Search, CheckCircle, XCircle, Clock3 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 export default function Index({ auth, companies, filters, metrics, flash }) {
@@ -39,7 +39,7 @@ export default function Index({ auth, companies, filters, metrics, flash }) {
 
                     {/* Metrics Section */}
                     {metrics && (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                             <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700/50 flex items-center gap-3">
                                 <div className="p-3 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg text-indigo-600 dark:text-indigo-400">
                                     <Building className="w-6 h-6" />
@@ -49,6 +49,15 @@ export default function Index({ auth, companies, filters, metrics, flash }) {
                                     <p className="text-2xl font-bold text-slate-900 dark:text-white">{metrics.total}</p>
                                 </div>
                             </div>
+                            <Link href={route('admin.company-registrations.index')} className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-amber-200 dark:border-amber-900/50 flex items-center gap-3 transition hover:bg-amber-50 dark:hover:bg-amber-950/20">
+                                <div className="p-3 bg-amber-50 dark:bg-amber-500/10 rounded-lg text-amber-600 dark:text-amber-400">
+                                    <Clock3 className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Pré-cadastros pendentes</p>
+                                    <p className="text-2xl font-bold text-slate-900 dark:text-white">{metrics.pending || 0}</p>
+                                </div>
+                            </Link>
                             <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700/50 flex items-center gap-3">
                                 <div className="p-3 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg text-emerald-600 dark:text-emerald-400">
                                     <CheckCircle className="w-6 h-6" />

@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm, usePage } from '@inertiajs/react';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import { Head, useForm } from '@inertiajs/react';
+import RichTextEditor from '@/Components/RichTextEditor';
 import { 
     Save, 
     Send, 
@@ -50,16 +49,6 @@ export default function Index({ auth, politica, companies, users, currentCompany
             'devolvida': <span className="px-2 py-1 rounded-full bg-red-100 text-red-800 text-xs font-semibold">Devolvida</span>,
         };
         return badges[status] || badges['rascunho'];
-    };
-
-    const modules = {
-        toolbar: [
-            [{ 'header': [1, 2, 3, false] }],
-            ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-            [{'list': 'ordered'}, {'list': 'bullet'}, {'indent': '-1'}, {'indent': '+1'}],
-            ['link', 'image'],
-            ['clean']
-        ],
     };
 
     const handleAction = (routeUrl) => {
@@ -133,19 +122,11 @@ export default function Index({ auth, politica, companies, users, currentCompany
                         
                         {/* Editor Principal */}
                         <div className="lg:col-span-2 bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                            <style>{`
-                                .ql-editor {
-                                    min-height: 500px;
-                                }
-                            `}</style>
                             {isEditing ? (
                                 <div className="space-y-4">
-                                    <ReactQuill 
-                                        theme="snow" 
+                                    <RichTextEditor
                                         value={data.conteudo} 
                                         onChange={(val) => setData('conteudo', val)}
-                                        modules={modules}
-                                        className="bg-white dark:text-slate-900"
                                     />
                                     {errors.conteudo && <p className="text-sm text-red-600 mt-1">{errors.conteudo}</p>}
                                     
@@ -207,7 +188,7 @@ export default function Index({ auth, politica, companies, users, currentCompany
                                 </div>
                             ) : (
                                 <div className="space-y-4">
-                                    <div className="prose max-w-none dark:prose-invert min-h-[500px]" dangerouslySetInnerHTML={{ __html: politica.conteudo || '<p class="text-slate-500">Nenhum conteúdo definido ainda.</p>' }} />
+                                    <div className="rich-text-output max-w-none min-h-[500px]" dangerouslySetInnerHTML={{ __html: politica.conteudo || '<p class="text-slate-500">Nenhum conteúdo definido ainda.</p>' }} />
                                     
                                     {canManage && (isRascunho || isAprovada) && (
                                         <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-700">

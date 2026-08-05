@@ -2,9 +2,11 @@
 
 namespace Database\Seeders;
 
+use App\Support\AuthorizationPermissions;
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class RolesAndPermissionsSeeder extends Seeder
 {
@@ -14,37 +16,15 @@ class RolesAndPermissionsSeeder extends Seeder
     public function run(): void
     {
         // Reset cached roles and permissions
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // Create Permissions
-        $permissions = [
-            'view-dashboard',
-            'view-auditorias',
-            'create-auditorias',
-            'edit-auditorias',
-            'delete-auditorias',
-            'view-naoconformidades',
-            'create-naoconformidades',
-            'edit-naoconformidades',
-            'delete-naoconformidades',
-            'view-planosacao',
-            'create-planosacao',
-            'edit-planosacao',
-            'delete-planosacao',
-            'view-companies',
-            'manage-companies',
-            'view-users',
-            'manage-users',
-            'view-politica-qualidade',
-            'manage-politica-qualidade',
-            'view-escopo',
-            'manage-escopo',
-            'view-objetivos-qualidade',
-            'manage-objetivos-qualidade',
-        ];
+        $permissions = AuthorizationPermissions::all();
 
         foreach ($permissions as $permission) {
-            Permission::firstOrCreate(['name' => $permission]);
+            Permission::firstOrCreate([
+                'name' => $permission,
+                'guard_name' => 'web',
+            ]);
         }
 
         // Create Roles and assign created permissions
@@ -53,10 +33,14 @@ class RolesAndPermissionsSeeder extends Seeder
         $roleUser = Role::firstOrCreate(['name' => 'User']);
         $roleUser->givePermissionTo([
             'view-dashboard',
+            'list-dashboard',
             'view-auditorias',
+            'list-auditorias',
             'view-naoconformidades',
+            'list-naoconformidades',
             'create-naoconformidades',
-            'view-planosacao'
+            'view-planosacao',
+            'list-planosacao',
         ]);
 
         // Admin

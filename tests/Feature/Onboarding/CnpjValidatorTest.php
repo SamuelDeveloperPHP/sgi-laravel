@@ -13,7 +13,7 @@ use PHPUnit\Framework\TestCase;
  *
  * CNPJs validos usados aqui foram gerados via geradores publicos
  * de CNPJ para teste (Gerador de CNPJ) e validados em multiplos
- * algoritmos (BrasilAPI, ReceitaWS). Nao correspondem a empresas
+ * algoritmos de validacao de CNPJ. Nao correspondem a empresas
  * reais — sao apenas combinacoes numericas que satisfazem o
  * checksum.
  */

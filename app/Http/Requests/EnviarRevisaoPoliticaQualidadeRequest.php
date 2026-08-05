@@ -2,10 +2,13 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\TenantScopedRules;
 use Illuminate\Foundation\Http\FormRequest;
 
 class EnviarRevisaoPoliticaQualidadeRequest extends FormRequest
 {
+    use TenantScopedRules;
+
     public function authorize()
     {
         return auth()->check() && auth()->user()->can('manage-politica-qualidade');
@@ -15,8 +18,8 @@ class EnviarRevisaoPoliticaQualidadeRequest extends FormRequest
     {
         return [
             'conteudo' => 'required|string',
-            'revisor_id' => 'required|exists:users,id',
-            'aprovador_id' => 'required|exists:users,id',
+            'revisor_id' => ['required', $this->tenantScopedExists('users')],
+            'aprovador_id' => ['required', $this->tenantScopedExists('users')],
         ];
     }
 }

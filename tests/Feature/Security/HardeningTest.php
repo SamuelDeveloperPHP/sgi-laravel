@@ -91,6 +91,14 @@ class HardeningTest extends SecurityTestCase
         $this->assertNull($response->headers->get('Strict-Transport-Security'));
     }
 
+    public function test_hsts_header_is_present_in_production_environment(): void
+    {
+        app()->detectEnvironment(fn () => 'production');
+
+        $this->get('/login')
+            ->assertHeader('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
+    }
+
     // ==================================================================
     // RATE LIMITING
     // ==================================================================

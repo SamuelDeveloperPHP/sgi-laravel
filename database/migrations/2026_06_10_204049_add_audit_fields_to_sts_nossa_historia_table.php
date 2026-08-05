@@ -11,10 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('sts_nossa_historia', function (Blueprint $table) {
-            $table->foreignId('user_create')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('user_edit')->nullable()->constrained('users')->nullOnDelete();
-        });
+        if (Schema::hasTable('sts_nossa_historia')) {
+            Schema::table('sts_nossa_historia', function (Blueprint $table) {
+                $table->foreignId('user_create')->nullable()->constrained('users')->nullOnDelete();
+                $table->foreignId('user_edit')->nullable()->constrained('users')->nullOnDelete();
+            });
+        }
     }
 
     /**
@@ -22,10 +24,12 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('sts_nossa_historia', function (Blueprint $table) {
-            $table->dropForeign(['user_create']);
-            $table->dropForeign(['user_edit']);
-            $table->dropColumn(['user_create', 'user_edit']);
-        });
+        if (Schema::hasTable('sts_nossa_historia')) {
+            Schema::table('sts_nossa_historia', function (Blueprint $table) {
+                $table->dropForeign(['user_create']);
+                $table->dropForeign(['user_edit']);
+                $table->dropColumn(['user_create', 'user_edit']);
+            });
+        }
     }
 };

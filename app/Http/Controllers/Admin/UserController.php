@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Company;
+use App\Rules\CorporateEmail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 use Illuminate\Validation\Rules;
+use Illuminate\Validation\Rule;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 
@@ -29,6 +31,7 @@ class UserController extends Controller
 
     public function index(Request $request)
     {
+        $this->authorizeManagementAccess();
         $authUser = $request->user();
         $isMaster = (bool) $authUser?->is_master_admin;
         $search = $request->input('search');
@@ -156,11 +159,13 @@ class UserController extends Controller
 
     public function create()
     {
+        $this->authorizeManagementAccess();
         return Inertia::render('Admin/Users/Form', $this->getFormProps());
     }
 
     public function store(Request $request)
     {
+        $this->authorizeManagementAccess();
         $authUser = $request->user();
         $isMaster = (bool) $authUser?->is_master_admin;
 
@@ -168,7 +173,7 @@ class UserController extends Controller
         // companies aos valores permitidos.
         $rules = [
             'name'      => 'required|string|max:255',
-            'email'     => 'required|string|lowercase|email|max:255',
+            'email'     => ['required', 'string', 'lowercase', 'email:rfc', 'max:255'],
             'password'  => ['required', Rules\Password::defaults()],
             'companies' => 'nullable|array',
             'is_active' => 'boolean',
@@ -185,7 +190,9 @@ class UserController extends Controller
             $rules['role'] = 'nullable|string|exists:roles,name';
             $rules['companies.*'] = 'exists:companies,id';
             // Email globalmente unico para master
-            $rules['email'] .= '|unique:users,email';
+            $selectedCompany = isset($request->companies[0])
+                ? Company::find($request->companies[0])
+                : null;
         } else {
             // Non-master: role obrigatoria, restrita as 5 do negocio
             $allowedRoles = implode(',', self::ALLOWED_ROLES_FOR_ADMIN);
@@ -194,8 +201,11 @@ class UserController extends Controller
             $rules['companies.*'] = 'in:' . $authUser->company_id;
             // Email unique por empresa (composite UNIQUE no DB
             // suporta isso; aqui validamos antes para mensagem amigavel)
-            $rules['email'] .= '|unique:users,email,NULL,id,company_id,' . $authUser->company_id;
+            $selectedCompany = Company::find($authUser->company_id);
         }
+
+        $rules['email'][] = new CorporateEmail($selectedCompany?->dominio_corporativo);
+        $rules['email'][] = Rule::unique('users', 'email');
 
         $validated = $request->validate($rules);
 
@@ -238,12 +248,14 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
+        $this->authorizeManagementAccess();
         $this->authorizeManage($user);
         return Inertia::render('Admin/Users/Form', $this->getFormProps($user));
     }
 
     public function update(Request $request, User $user)
     {
+        $this->authorizeManagementAccess();
         $this->authorizeManage($user);
 
         $authUser = $request->user();
@@ -251,7 +263,7 @@ class UserController extends Controller
 
         $rules = [
             'name'      => 'required|string|max:255',
-            'email'     => 'required|string|lowercase|email|max:255',
+            'email'     => ['required', 'string', 'lowercase', 'email:rfc', 'max:255'],
             'companies' => 'nullable|array',
             'is_active' => 'boolean',
             'role'      => 'nullable|string',
@@ -263,14 +275,19 @@ class UserController extends Controller
         if ($isMaster) {
             $rules['role'] = 'nullable|string|exists:roles,name';
             $rules['companies.*'] = 'exists:companies,id';
-            $rules['email'] .= '|unique:users,email,' . $user->id;
+            $selectedCompany = isset($request->companies[0])
+                ? Company::find($request->companies[0])
+                : Company::find($user->company_id);
         } else {
             $allowedRoles = implode(',', self::ALLOWED_ROLES_FOR_ADMIN);
             $rules['role'] = "required|string|in:{$allowedRoles}";
             $rules['companies.*'] = 'in:' . $authUser->company_id;
             // Unique por empresa (excluindo o proprio user na edicao)
-            $rules['email'] .= '|unique:users,email,' . $user->id . ',id,company_id,' . $authUser->company_id;
+            $selectedCompany = Company::find($authUser->company_id);
         }
+
+        $rules['email'][] = new CorporateEmail($selectedCompany?->dominio_corporativo);
+        $rules['email'][] = Rule::unique('users', 'email')->ignore($user->id);
 
         if ($request->filled('password')) {
             $rules['password'] = [Rules\Password::defaults()];
@@ -317,6 +334,7 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
+        $this->authorizeManagementAccess();
         $this->authorizeManage($user);
 
         if (auth()->id() === $user->id) {
@@ -352,6 +370,14 @@ class UserController extends Controller
         // Non-master: alvo precisa ser da mesma empresa
         if ($user->company_id !== $authUser->company_id) {
             abort(403, 'Usuário pertence a outra empresa.');
+        }
+    }
+
+    private function authorizeManagementAccess(): void
+    {
+        $user = auth()->user();
+        if (!$user || (!$user->is_master_admin && !$user->hasRole('Administrador'))) {
+            abort(403, 'Apenas o Administrador da empresa pode gerenciar acessos.');
         }
     }
 }

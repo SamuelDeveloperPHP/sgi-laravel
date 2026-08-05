@@ -1,16 +1,18 @@
 import { Fragment, useState, useEffect, useRef } from 'react';
-import { Dialog, Transition } from '@headlessui/react';
+import { Dialog, Transition, Menu } from '@headlessui/react';
 import { X, MessageSquare, Paperclip, CheckCircle2, Circle, MoreHorizontal, Send, Info, Tag, Users } from 'lucide-react';
 import { router, usePage } from '@inertiajs/react';
 import dayjs from 'dayjs';
 import axios from 'axios';
 
-export default function TaskModal({ isOpen, onClose, task, columns }) {
-    const { auth } = usePage().props;
+export default function TaskModal({ isOpen, onClose, task, columns, onUpdateTask }) {
+    const { auth, projeto } = usePage().props;
     const [activeTab, setActiveTab] = useState('details');
     const [data, setData] = useState(null);
     const [newMessage, setNewMessage] = useState('');
     const [newChecklist, setNewChecklist] = useState('');
+    const [newTag, setNewTag] = useState('');
+    const [isAddingTag, setIsAddingTag] = useState(false);
     
     // Sync local state with prop
     useEffect(() => {
@@ -22,46 +24,138 @@ export default function TaskModal({ isOpen, onClose, task, columns }) {
     if (!data) return null;
 
     const handleUpdateField = (field, value) => {
-        setData(prev => ({ ...prev, [field]: value }));
-        // Auto save field
-        axios.put(route('tarefas.update', data.id), {
+        const updatedTask = { ...data, [field]: value };
+        setData(updatedTask);
+        if (onUpdateTask) {
+            onUpdateTask(updatedTask);
+        }
+        // Auto save field in background
+        axios.put(`/tarefas/${data.id}`, {
             [field]: value,
             _method: 'PUT'
         }).catch(err => console.error(err));
+    };
+
+    const handleAddTag = (e) => {
+        if (e.key === 'Enter' && newTag.trim()) {
+            e.preventDefault();
+            if (!(data.tags || []).includes(newTag.trim().toUpperCase())) {
+                const updatedTags = [...(data.tags || []), newTag.trim().toUpperCase()];
+                handleUpdateField('tags', updatedTags);
+            }
+            setNewTag('');
+            setIsAddingTag(false);
+        } else if (e.key === 'Escape') {
+            setNewTag('');
+            setIsAddingTag(false);
+        }
+    };
+
+    const handleRemoveTag = (tagToRemove) => {
+        const updatedTags = (data.tags || []).filter(t => t !== tagToRemove);
+        handleUpdateField('tags', updatedTags);
+    };
+
+    const handleToggleUser = (userId) => {
+        const currentUsers = data.users || [];
+        const userExists = currentUsers.find(u => u.id === userId);
+        let updatedUsers;
+        if (userExists) {
+            updatedUsers = currentUsers.filter(u => u.id !== userId);
+        } else {
+            const userObj = projeto.membros.find(m => m.id === userId);
+            if (userObj) updatedUsers = [...currentUsers, userObj];
+        }
+        if (updatedUsers) {
+            const updatedTask = { ...data, users: updatedUsers };
+            setData(updatedTask);
+            if (onUpdateTask) {
+                onUpdateTask(updatedTask);
+            }
+            axios.put(`/tarefas/${data.id}`, {
+                users: updatedUsers.map(u => u.id),
+                _method: 'PUT'
+            }).catch(err => console.error(err));
+        }
     };
 
     const handleAddComment = (e) => {
         e.preventDefault();
         if (!newMessage.trim()) return;
 
-        router.post(route('tarefas.comentarios.store', data.id), {
-            mensagem: newMessage
-        }, {
-            preserveScroll: true,
-            onSuccess: () => setNewMessage('')
-        });
+        const tempComment = {
+            id: Date.now(),
+            mensagem: newMessage,
+            created_at: new Date().toISOString(),
+            user: auth.user
+        };
+        const updatedComments = [tempComment, ...(data.comentarios || [])];
+        const updatedTask = { ...data, comentarios: updatedComments };
+        setData(updatedTask);
+        if (onUpdateTask) {
+            onUpdateTask(updatedTask);
+        }
+        setNewMessage('');
+
+        axios.post(`/tarefas/${data.id}/comentarios`, {
+            mensagem: tempComment.mensagem
+        }).then(() => {
+            router.reload({ only: ['projeto'], preserveScroll: true });
+        }).catch(err => console.error(err));
     };
 
     const handleAddChecklist = (e) => {
         if (e.key === 'Enter' && newChecklist.trim()) {
             e.preventDefault();
-            router.post(route('tarefas.checklists.store', data.id), {
-                descricao: newChecklist
-            }, {
-                preserveScroll: true,
-                onSuccess: () => setNewChecklist('')
-            });
+            const tempId = Date.now();
+            const newChecklistItem = {
+                id: tempId,
+                descricao: newChecklist.trim(),
+                concluido: false,
+                ordem: (data.checklists?.length || 0) + 1
+            };
+            const updatedChecklists = [...(data.checklists || []), newChecklistItem];
+            const updatedTask = { ...data, checklists: updatedChecklists };
+            setData(updatedTask);
+            if (onUpdateTask) {
+                onUpdateTask(updatedTask);
+            }
+            setNewChecklist('');
+
+            axios.post(`/tarefas/${data.id}/checklists`, {
+                descricao: newChecklistItem.descricao
+            }).then(() => {
+                router.reload({ only: ['projeto'], preserveScroll: true });
+            }).catch(err => console.error(err));
         }
     };
 
     const toggleChecklist = (checklist) => {
-        router.put(route('tarefas.checklists.update', checklist.id), {
+        const updatedChecklists = (data.checklists || []).map(item => 
+            item.id === checklist.id ? { ...item, concluido: !item.concluido } : item
+        );
+        const updatedTask = { ...data, checklists: updatedChecklists };
+        setData(updatedTask);
+        if (onUpdateTask) {
+            onUpdateTask(updatedTask);
+        }
+
+        axios.put(`/tarefas/checklists/${checklist.id}`, {
             concluido: !checklist.concluido
-        }, { preserveScroll: true });
+        }).catch(err => console.error(err));
     };
 
-    const handleDeleteChecklist = (id) => {
-        router.delete(route('tarefas.checklists.destroy', id), { preserveScroll: true });
+    const handleDeleteChecklist = (checklistId) => {
+        const updatedChecklists = (data.checklists || []).filter(item => item.id !== checklistId);
+        const updatedTask = { ...data, checklists: updatedChecklists };
+        setData(updatedTask);
+        if (onUpdateTask) {
+            onUpdateTask(updatedTask);
+        }
+
+        axios.delete(`/tarefas/checklists/${checklistId}`)
+            .then(() => router.reload({ only: ['projeto'], preserveScroll: true }))
+            .catch(err => console.error(err));
     };
 
     const handleFileUpload = (e) => {
@@ -71,7 +165,7 @@ export default function TaskModal({ isOpen, onClose, task, columns }) {
         const formData = new FormData();
         formData.append('file', file);
         
-        router.post(route('tarefas.anexos.store', data.id), formData, {
+        router.post(`/tarefas/${data.id}/anexos`, formData, {
             preserveScroll: true,
             forceFormData: true,
         });
@@ -126,7 +220,8 @@ export default function TaskModal({ isOpen, onClose, task, columns }) {
                                             <input 
                                                 className="bg-transparent border-none text-2xl font-bold text-white p-0 focus:ring-0 w-full placeholder-gray-600 mb-2"
                                                 value={data.nome || ''}
-                                                onChange={(e) => handleUpdateField('nome', e.target.value)}
+                                                onChange={(e) => setData(prev => ({ ...prev, nome: e.target.value }))}
+                                                onBlur={(e) => handleUpdateField('nome', e.target.value)}
                                                 placeholder="Nome da Tarefa"
                                             />
                                             <div className="flex items-center gap-1 text-xs text-gray-500">
@@ -138,15 +233,80 @@ export default function TaskModal({ isOpen, onClose, task, columns }) {
 
                                     {/* Badges/Tags (Mock) */}
                                     <div className="flex items-center gap-4 mb-8 text-sm">
-                                        <div className="flex items-center gap-2">
+                                        {/* Tags */}
+                                        <div className="flex items-center gap-2 flex-wrap">
                                             <Tag className="w-4 h-4 text-gray-500" />
-                                            <span className="bg-red-500/20 text-red-400 px-2 py-0.5 rounded flex items-center gap-1">URG <X className="w-3 h-3 cursor-pointer"/></span>
-                                            <span className="bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded flex items-center gap-1">TEC <X className="w-3 h-3 cursor-pointer"/></span>
+                                            {(data.tags || []).map((tag, idx) => (
+                                                <span key={idx} className="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded flex items-center gap-1 font-semibold text-[10px] uppercase">
+                                                    {tag} <X onClick={() => handleRemoveTag(tag)} className="w-3 h-3 cursor-pointer hover:text-red-400"/>
+                                                </span>
+                                            ))}
+                                            {isAddingTag ? (
+                                                <input 
+                                                    autoFocus
+                                                    type="text" 
+                                                    value={newTag}
+                                                    onChange={e => setNewTag(e.target.value)}
+                                                    onKeyDown={handleAddTag}
+                                                    onBlur={() => {setIsAddingTag(false); setNewTag('');}}
+                                                    className="bg-[#2d2d2d] border border-gray-600 rounded text-[10px] text-white px-2 py-0.5 w-20 focus:ring-1 focus:ring-indigo-500 outline-none uppercase"
+                                                    placeholder="TAG..."
+                                                />
+                                            ) : (
+                                                <button onClick={() => setIsAddingTag(true)} className="w-5 h-5 rounded flex items-center justify-center bg-[#2d2d2d] border border-dashed border-gray-600 text-gray-400 hover:text-white hover:border-gray-400 transition-colors">
+                                                    <span className="text-lg leading-none mb-0.5">+</span>
+                                                </button>
+                                            )}
                                         </div>
+
+                                        {/* Users */}
                                         <div className="flex items-center gap-2 ml-4">
                                             <Users className="w-4 h-4 text-gray-500" />
-                                            <div className="flex -space-x-2">
-                                                <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-[10px] text-white border border-[#1c1c1c]">SM</div>
+                                            <div className="flex -space-x-1 relative">
+                                                {(data.users || []).map((user, idx) => (
+                                                    <div key={user.id} className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] text-white font-bold border border-[#1c1c1c] ${idx % 2 === 0 ? 'bg-indigo-600' : 'bg-emerald-600'}`} title={user.name}>
+                                                        {user.name.substring(0, 2).toUpperCase()}
+                                                    </div>
+                                                ))}
+                                                
+                                                <Menu as="div" className="relative z-50">
+                                                    <Menu.Button className="w-6 h-6 rounded-full flex items-center justify-center bg-[#2d2d2d] border border-dashed border-gray-600 text-gray-400 hover:text-white hover:border-gray-400 transition-colors ml-1 z-10 relative">
+                                                        <span className="text-lg leading-none mb-0.5">+</span>
+                                                    </Menu.Button>
+                                                    <Transition
+                                                        as={Fragment}
+                                                        enter="transition ease-out duration-100"
+                                                        enterFrom="transform opacity-0 scale-95"
+                                                        enterTo="transform opacity-100 scale-100"
+                                                        leave="transition ease-in duration-75"
+                                                        leaveFrom="transform opacity-100 scale-100"
+                                                        leaveTo="transform opacity-0 scale-95"
+                                                    >
+                                                        <Menu.Items className="absolute left-0 mt-2 w-48 bg-[#2d2d2d] border border-gray-700 rounded-md shadow-lg outline-none max-h-60 overflow-y-auto">
+                                                            <div className="p-1">
+                                                                {(projeto.membros || []).map(membro => {
+                                                                    const isAssigned = (data.users || []).some(u => u.id === membro.id);
+                                                                    return (
+                                                                        <Menu.Item key={membro.id}>
+                                                                            {({ active }) => (
+                                                                                <button
+                                                                                    onClick={() => handleToggleUser(membro.id)}
+                                                                                    className={`${active ? 'bg-indigo-600 text-white' : 'text-gray-300'} flex w-full items-center justify-between rounded-md px-2 py-1.5 text-xs font-medium`}
+                                                                                >
+                                                                                    <span className="truncate">{membro.name}</span>
+                                                                                    {isAssigned && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />}
+                                                                                </button>
+                                                                            )}
+                                                                        </Menu.Item>
+                                                                    );
+                                                                })}
+                                                                {(!projeto.membros || projeto.membros.length === 0) && (
+                                                                    <div className="px-2 py-1.5 text-xs text-gray-500">Nenhum membro no projeto</div>
+                                                                )}
+                                                            </div>
+                                                        </Menu.Items>
+                                                    </Transition>
+                                                </Menu>
                                             </div>
                                         </div>
                                     </div>
@@ -277,7 +437,8 @@ export default function TaskModal({ isOpen, onClose, task, columns }) {
                                                 <textarea 
                                                     rows={4}
                                                     value={data.descricao || ''}
-                                                    onChange={(e) => handleUpdateField('descricao', e.target.value)}
+                                                    onChange={(e) => setData(prev => ({ ...prev, descricao: e.target.value }))}
+                                                    onBlur={(e) => handleUpdateField('descricao', e.target.value)}
                                                     placeholder="Digite uma descrição ou adicione anotações aqui"
                                                     className="w-full bg-[#2d2d2d] border border-gray-700 rounded-md text-sm text-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 p-3 resize-none"
                                                 />
@@ -309,13 +470,13 @@ export default function TaskModal({ isOpen, onClose, task, columns }) {
                                                                     <Paperclip className="w-4 h-4 text-gray-400" />
                                                                 </div>
                                                                 <div>
-                                                                    <a href={`/storage/${anexo.file_path}`} target="_blank" className="text-sm font-medium text-indigo-400 hover:underline">{anexo.file_name}</a>
+                                                                    <a href={route('tarefas.anexos.download', anexo.id)} target="_blank" className="text-sm font-medium text-indigo-400 hover:underline">{anexo.file_name}</a>
                                                                     <p className="text-xs text-gray-500">Adicionado em {dayjs(anexo.created_at).format('DD/MM/YYYY')}</p>
                                                                 </div>
                                                             </div>
                                                             <button 
                                                                 onClick={() => {
-                                                                    router.delete(route('tarefas.anexos.destroy', anexo.id), { preserveScroll: true });
+                                                                    router.delete(`/tarefas/anexos/${anexo.id}`, { preserveScroll: true });
                                                                 }}
                                                                 className="text-gray-500 hover:text-red-400 p-1"
                                                             >

@@ -96,7 +96,7 @@ export default function Show({ auth, objetivo }) {
                             
                             <div className="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
                                 <h4 className="text-lg font-medium text-slate-900 dark:text-white mb-4">Descrição</h4>
-                                <div className="prose max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: objetivo.descricao || '<p class="text-slate-500 italic">Sem descrição.</p>' }} />
+                                <div className="rich-text-output max-w-none" dangerouslySetInnerHTML={{ __html: objetivo.descricao || '<p class="text-slate-500 italic">Sem descrição.</p>' }} />
                             </div>
 
                             <div className="bg-white dark:bg-slate-800 overflow-hidden shadow-sm sm:rounded-lg p-6">

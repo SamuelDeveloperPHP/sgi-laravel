@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Models\Company;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
@@ -55,41 +56,43 @@ class MasterAdminAuditObserver
     private function log(Model $model, string $ability): void
     {
         // Sem auth (console, jobs, seeders) → não loga.
-        if (!auth()->check()) {
+        if (! auth()->check()) {
             return;
         }
 
         $user = auth()->user();
-        if (!$user->is_master_admin) {
+        if (! $user->is_master_admin) {
             return;
         }
 
         try {
             DB::table('master_admin_audit_log')->insert([
-                'user_id'           => $user->id,
-                'company_id_target' => $model->company_id ?? null,
-                'ability'           => $ability,
-                'model_type'        => get_class($model),
-                'model_id'          => $model->getKey(),
-                'changes_json'      => json_encode([
+                'user_id' => $user->id,
+                'company_id_target' => $model instanceof Company
+                    ? $model->getKey()
+                    : ($model->company_id ?? null),
+                'ability' => $ability,
+                'model_type' => get_class($model),
+                'model_id' => $model->getKey(),
+                'changes_json' => json_encode([
                     'before' => $ability === 'created' ? null : $model->getOriginal(),
-                    'after'  => in_array($ability, ['deleted', 'forceDeleted'], true)
+                    'after' => in_array($ability, ['deleted', 'forceDeleted'], true)
                         ? null
                         : $model->getAttributes(),
-                    'dirty'  => $model->getChanges(),
+                    'dirty' => $model->getChanges(),
                 ], JSON_UNESCAPED_UNICODE | JSON_PARTIAL_OUTPUT_ON_ERROR),
-                'ip_address'        => request()->ip(),
-                'user_agent'        => substr((string) request()->userAgent(), 0, 500),
-                'created_at'        => now(),
+                'ip_address' => request()->ip(),
+                'user_agent' => substr((string) request()->userAgent(), 0, 500),
+                'created_at' => now(),
             ]);
         } catch (\Throwable $e) {
             // Não quebrar a operação principal por falha no log.
             // TODO: encaminhar para canal de log estruturado (Sentry, etc.).
             \Log::warning('MasterAdminAuditObserver: falha ao gravar audit log', [
                 'model_type' => get_class($model),
-                'model_id'   => $model->getKey(),
-                'ability'    => $ability,
-                'error'      => $e->getMessage(),
+                'model_id' => $model->getKey(),
+                'ability' => $ability,
+                'error' => $e->getMessage(),
             ]);
         }
     }
