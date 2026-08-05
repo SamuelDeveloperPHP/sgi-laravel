@@ -15,6 +15,8 @@ class DashboardController extends Controller
      */
     public function index()
     {
+        $this->authorizePermission('view-dashboard');
+
         // Resumo estatístico
         $stats = [
             'total_pa' => PlanoAcao::count(),

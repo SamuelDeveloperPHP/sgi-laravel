@@ -10,3 +10,4 @@ Artisan::command('inspire', function () {
 use Illuminate\Support\Facades\Schedule;
 
 Schedule::command('sgi:verificar-prazos-objetivos')->dailyAt('08:00');
+Schedule::command('sgi:expire-public-accounts')->dailyAt('08:15');
